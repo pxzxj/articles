@@ -25,3 +25,4 @@ xref:spring-data-jpa-samples.adoc[Spring Data JPA示例]  :: 2024/08/05
 xref:two-task-scheduling-mode.adoc[两种任务调度模式]  :: 2024/08/22
 xref:english-grammer-introduction.adoc[英语语法简介]  :: 2024/10/07
 xref:wiremock.adoc[WireMock]  :: 2024/12/29
+xref:two-years-misery.adoc[20个月漫漫讨债路：认识一个烂人的代价有多大]  :: 2025/02/22
