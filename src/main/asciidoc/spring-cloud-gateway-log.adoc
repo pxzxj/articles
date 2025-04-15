@@ -1,0 +1,275 @@
+= Spring Cloud Gateway记录操作日志
+pxzxj; pudge.zxj@gmail.com; 2025/04/15
+
+== 基础信息
+
+[horizontal]
+Spring Boot Version  :: 2.7.18
+Spring Cloud Version  ::  2021.0.3
+
+== 添加依赖
+
+[source,xml,subs="verbatim"]
+----
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-r2dbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb</groupId>
+            <artifactId>r2dbc-mariadb</artifactId>
+        </dependency>
+    </dependencies>
+----
+
+== 数据库配置
+
+[source,yaml,subs="verbatim"]
+----
+spring:
+  r2dbc:
+    url: r2dbc:mariadb://127.0.0.1:3306/cmtt
+    username: root
+    password: 1qaz@WSX
+----
+
+== 类
+
+.Log.java
+[source,java,subs="verbatim"]
+----
+public class Log {
+
+	@Id
+	private Long id;
+
+	private String type;
+
+	private String detail;
+
+	private String principal;
+
+	private String requestUri;
+
+	private Integer responseCode;
+
+	private String remoteAddress;
+
+	private LocalDateTime occurTime;
+}
+----
+
+.SystemNode.java
+[source,java,subs="verbatim"]
+----
+@Table(name = "system_node")
+public class SystemNode {
+
+	public static final String TYPE_MENU = "menu";
+
+	public static final String TYPE_BUTTON = "button";
+
+	@Id
+	private Long nodeId;
+
+	private String nodeText;
+
+	/**
+	 * 主题
+	 */
+	private String title;
+
+	/**
+	 * 状态
+	 */
+	private int state;
+
+	/**
+	 * 父节点
+	 */
+	private Long pid;
+
+	/**
+	 * 级别
+	 */
+	private int levels;
+
+	/**
+	 * 排序
+	 */
+	private int sort;
+
+	/**
+	 * 备注
+	 */
+	private String remark;
+
+	/**
+	 * 类型
+	 */
+	private String type;
+
+	/**
+	 * 链接
+	 */
+	private String url;
+
+	/***/
+	private String componentId;
+
+	/**
+	 * leftMenu中的图标显示
+	 */
+	private String imageClassName;
+
+	/**
+	 * 页面链接
+	 */
+	private String pageUrl;
+
+	private String permissions;
+}
+----
+
+.LogRepository.java
+[source,java,subs="verbatim"]
+----
+public interface LogRepository extends ReactiveCrudRepository<Log, Long> {
+
+
+}
+----
+
+.SystemNodeRepository.java
+[source,java,subs="verbatim"]
+----
+public interface SystemNodeRepository extends ReactiveCrudRepository<SystemNode, Long> {
+
+
+}
+----
+
+.LogGlobalFilter.java
+[source,java,subs="verbatim"]
+----
+public class LogGlobalFilter implements GlobalFilter, InitializingBean {
+
+	private final LogRepository logRepository;
+
+	private final SystemNodeRepository systemNodeRepository;
+
+	private final ConcurrentHashMap<String, String> apiMenuMap = new ConcurrentHashMap<>();
+
+	public LogGlobalFilter(LogRepository logRepository,
+			SystemNodeRepository systemNodeRepository) {
+		this.logRepository = logRepository;
+		this.systemNodeRepository = systemNodeRepository;
+	}
+
+	@Override
+	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		return chain.filter(exchange)
+				.then(exchange.getPrincipal())
+				.defaultIfEmpty(() -> "")
+				.flatMap(principal -> saveLog(exchange, principal))
+				.flatMap(log -> Mono.empty());
+	}
+
+	public Mono<Log> saveLog(ServerWebExchange exchange, Principal principal) {
+		Log log = new Log();
+		log.setType("API访问");
+		log.setPrincipal(principal.getName());
+		log.setOccurTime(LocalDateTime.now());
+		String requestUri = exchange.getRequest().getPath().value();
+		log.setRequestUri(requestUri);
+		log.setDetail(apiMenuMap.get(requestUri));
+		if (exchange.getResponse().getStatusCode() != null) {
+			log.setResponseCode(exchange.getResponse().getStatusCode().value());
+		}
+		if (exchange.getRequest().getRemoteAddress() != null) {
+			log.setRemoteAddress(exchange.getRequest().getRemoteAddress().toString());
+		}
+		return logRepository.save(log);
+	}
+
+	public Mono<Void> refresh() {
+		return systemNodeRepository.findAll().collectList().map(nodes -> {
+			populateApiMenuMap(nodes);
+			return nodes;
+		}).flatMap(nodes -> Mono.empty());
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		systemNodeRepository.findAll().collectList().map(nodes -> {
+			populateApiMenuMap(nodes);
+			return nodes;
+		}).subscribe();
+	}
+
+	public void populateApiMenuMap(List<SystemNode> systemNodeList) {
+		Map<Long, SystemNode> map = new HashMap<>();
+		for (SystemNode systemNode : systemNodeList) {
+			map.put(systemNode.getNodeId(), systemNode);
+		}
+		for (SystemNode systemNode : systemNodeList) {
+			String permissions = systemNode.getPermissions();
+			String menu = "";
+			SystemNode sn = systemNode;
+			while (sn != null) {
+				if ("".equals(menu)) {
+					menu = sn.getNodeText();
+				}
+				else {
+					menu = sn.getNodeText() + "-" + menu;
+				}
+				if (sn.getPid() != null) {
+					sn = map.get(sn.getPid());
+				}
+				else {
+					sn = null;
+				}
+			}
+			if (StringUtils.hasText(permissions)) {
+				String[] apiArray = permissions.split("\\s*,\\s*");
+				for (String api : apiArray) {
+					apiMenuMap.put(api, menu);
+				}
+			}
+		}
+	}
+}
+----
+
+.WebFluxConfig.java
+[source,java,subs="verbatim"]
+----
+@Configuration
+public class WebFluxConfig {
+
+	@Bean
+	public LogGlobalFilter logGlobalFilter(LogRepository logRepository, SystemNodeRepository systemNodeRepository) {
+		return new LogGlobalFilter(logRepository, systemNodeRepository);
+	}
+}
+----
+
+.LogController.java
+[source,java,subs="verbatim"]
+----
+@RestController
+public class LogController {
+
+	private final LogGlobalFilter logGlobalFilter;
+
+	public LogController(LogGlobalFilter logGlobalFilter) {
+		this.logGlobalFilter = logGlobalFilter;
+	}
+
+	@PostMapping("/log/refresh")
+	public Mono<Void> refresh() {
+		return logGlobalFilter.refresh();
+	}
+}
+----
