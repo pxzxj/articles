@@ -25,3 +25,4 @@ xref:src/main/asciidoc/wiremock.adoc[WireMock]  :: 2024/12/29
 xref:src/main/asciidoc/spring-cloud-gateway-log.adoc[Spring Cloud Gateway记录操作日志]  :: 2025/04/15
 xref:src/main/asciidoc/truelicense.adoc[TrueLicense入门]  :: 2025/04/22
 xref:src/main/asciidoc/jasypt.adoc[Jasypt实现配置文件加密]  :: 2025/04/22
+xref:src/main/asciidoc/mom-never-worry-my-english-any-more.adoc[妈妈不用担心我的英语]  :: 2025/05/07
