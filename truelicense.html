@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2025/04/22">
+<title>TrueLicense使用入门</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>TrueLicense使用入门</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2025/04/22</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_简介">1. 简介</a></li>
+<li><a href="#_实现原理">2. 实现原理</a></li>
+<li><a href="#_生成liscense">3. 生成Liscense</a></li>
+<li><a href="#_license安装验证">4. License安装验证</a></li>
+<li><a href="#_高级">5. 高级</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_简介"><a class="anchor" href="#_简介"></a>1. 简介</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>TrueLicense是一个在JVM上运行的许可证管理的商业开源引擎，由于其精巧的模块化设计，它即支持简单的许可证管理模式，也适用于多种复杂的许可证管理场景，如试用期、同软件多个版本、国际化等</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_实现原理"><a class="anchor" href="#_实现原理"></a>2. 实现原理</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>与SSL的证书验证方式类似，TrueLicense也是以公钥加密体系为核心实现验证；初始生成一对密钥，许可证生成器使用私钥加密验证信息后生成许可证文件，软件运行后使用公钥解密许可证信息完成验证</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_生成liscense"><a class="anchor" href="#_生成liscense"></a>3. 生成Liscense</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>为了方便用户使用，TrueLicense提供了一个Maven Archetype来生成模板代码，下面以Eclipse为例介绍TrueLicense Maven Archetype的使用方式</p>
+</div>
+<div class="paragraph">
+<p>第一步： New &#8594; Maven Project,在Archetype选择界面中点击Add Archetype新增一个Archetype如下</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/truelicense1.png" alt="truelicense1">
+</div>
+</div>
+<div class="paragraph">
+<p>在New Maven Project窗口中，对左下方的属性进行赋值，其中company、password、subject为必填属性，下面对这些属性的意义进行说，其它属性的说明可以参考官方文档</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/truelicense2.png" alt="truelicense2">
+</div>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+company  
+</td>
+<td class="hdlist2">
+<p>生成的许可证中的公司名称</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+password  
+</td>
+<td class="hdlist2">
+<p>加密生成的密钥对时使用的密码，密码要满足复杂度要求，包含大小写字母数字特殊符号且八位以上，否则使用时会抛出弱口令异常</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+subject  
+</td>
+<td class="hdlist2">
+<p>许可证中的主体，也是验证的部分，验证失败时抛出异常；如果要限制软件仅能在特定主机上运行可以考虑使用主机唯一标识，如mac地址，硬盘序列号等信息；否则所有许可证的subject可以相同。subject值此时可能尚无法确定，可以先随便填一个值后面再修改。</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>二步完成后会生成一个Maven项目，内部包含三个子模块，分别为项目名后加keygen、keymgr、keymgrsrv</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/truelicense3.png" alt="truelicense3">
+</div>
+</div>
+<div class="paragraph">
+<p>项目生成完成后在父项目目录下执行mvn clean install –Pintegration-test构建项目，项目构建完成后会生成诸多文件，这些文件的说明参考官方文档</p>
+</div>
+<div class="paragraph">
+<p>此处需要使用的文件有两个分别为 <code>${projectName}-keygen/target/generated-sources/java/${packageName}/LicenseManager.java</code> 和 <code>${projectName}-keymrg/target/generated-sources/java/${packageName}/LicenseManager.java</code> 这两个文件分别可以用于生成许可证和验证许可证，生成许可证使用的私钥和验证许可证使用的公钥分别是 <code>${projectName}-keygen/src/main/resources/private.ks</code> 和 <code>${projectName}-keymrg/src/main/resources/public.ks</code></p>
+</div>
+<div class="paragraph">
+<p>上一步构建完成的项目可以用于生成License并校验，但在实际业务场景中更多得是要求在已有的web项目中集成License管理功能；下面以两个已存在的web项目中的main方法为例来说明集成方法</p>
+</div>
+<div class="paragraph">
+<p>当前存在两个web项目rest-keygen和rest-keymgr，都使用流行的ssm框架进行开发，分别用于生成License和验证License</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/truelicense4.png" alt="truelicense4">
+</div>
+</div>
+<div class="paragraph">
+<p>先在 <code>pom.xml</code> 中加入truelicense的依赖如下</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+            &lt;groupId&gt;net.truelicense&lt;/groupId&gt;
+            &lt;artifactId&gt;truelicense-v2-json&lt;/artifactId&gt;
+            &lt;version&gt;3.2.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>将之前生成的keygen项目中的 <code>LicenseManager.java</code> 和 <code>private.ks</code> 分别复制到rest-keygen项目的 <code>src/main/java和src/man/resources</code> 中；运行如下的main方法就可以生成一个License文件了</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">VendorLicenseManager manager = LicenseManager.standard;
+LicenseManagementContext context = manager.context();
+License bean = context.license();
+Sink sink = context.pathStore(Paths.get("C:/Users/pxzxj/22.lic"));
+context.stdout();
+manager.generateKeyFrom(bean).saveTo(sink);
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>以上代码生成的License文件中的subject值就是第二步创建项目时subject属性的值，这个值以LicenseManager的一个似有final变量保存；这样的设计显然计划永远不修改subject的值，需要修改时重新执行第二步生成新的项目代码
+作者并未提及这样设计的原因，也许他认为购买者并不会将买到的License传播给他人使用，然后我们为了安全起见要求每个License的subject都不相同所以需要修改LicenseManager的SUBJECT属性为非final并提供一个修改此属性的public方法</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_license安装验证"><a class="anchor" href="#_license安装验证"></a>4. License安装验证</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>将之前生成的keymgr项目中的 <code>LicenseManager.java</code> 和 <code>public.ks</code> 分别复制到rest-keymgr项目的 <code>src/main/java和src/man/resources</code> 中；类似的删除LicenseManager.SUBJECT的final修饰符并提供set方法；运行如下main方法安装并验证License</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">ConsumerLicenseManager manager = LicenseManager.get();
+LicenseManagementContext context = manager.context();
+Source source = context.pathStore(java.nio.file.Paths.get("C:/Users/pxzxj/22.lic"));
+manager.install(source);
+manager.verify(source);
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_高级"><a class="anchor" href="#_高级"></a>5. 高级</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>上文描述了Truelicense的最简单使用，实际上它还支持很多高级用法，如一定时长的试用期、同软件多个版本、部分关键代码字节码混淆处理保证安全等等，这部分内容参考官方文档</p>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-06-09 07:15:35 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

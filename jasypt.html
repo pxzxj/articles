@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2025/04/22">
+<title>Jasypt实现配置文件加密</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Jasypt实现配置文件加密</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2025/04/22</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_简介">1. 简介</a></li>
+<li><a href="#_下载">2. 下载</a></li>
+<li><a href="#_基础用法">3. 基础用法</a>
+<ul class="sectlevel2">
+<li><a href="#_消息摘要">3.1. 消息摘要</a></li>
+<li><a href="#_密码加密">3.2. 密码加密</a></li>
+<li><a href="#_文本加密">3.3. 文本加密</a></li>
+<li><a href="#_配置文件加密">3.4. 配置文件加密</a></li>
+</ul>
+</li>
+<li><a href="#_命令行工具">4. 命令行工具</a></li>
+<li><a href="#_spring配置加密">5. Spring配置加密</a>
+<ul class="sectlevel2">
+<li><a href="#_使用方式">5.1. 使用方式</a></li>
+<li><a href="#_实现原理">5.2. 实现原理</a>
+<ul class="sectlevel3">
+<li><a href="#_propertyplaceholderconfigurer原理">5.2.1. PropertyPlaceholderConfigurer原理</a></li>
+<li><a href="#_encryptablepropertysourcesplaceholderconfigurer原理">5.2.2. EncryptablePropertySourcesPlaceholderConfigurer原理</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_spring_boot配置加密">6. Spring Boot配置加密</a></li>
+<li><a href="#_环境变量重置">7. 环境变量重置</a></li>
+<li><a href="#_示例说明">8. 示例说明</a>
+<ul class="sectlevel2">
+<li><a href="#_springmvcstruts2示例">8.1. SpringMVC/Struts2示例</a></li>
+<li><a href="#_springboot示例">8.2. SpringBoot示例</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_简介"><a class="anchor" href="#_简介"></a>1. 简介</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>jasypt是一个加解密的Java类库，名称取自Java Simplified Encryption的首字母组合。作者是 <a href="http://www.jasypt.org/team.html">Daniel Fernández</a>——他也是流行的模板引擎 <a href="http://www.thymeleaf.org/">thymeleaf</a>的作者。它使开发者能够非常轻松地使用常用的加密算法和摘要算法对密码、文本、数字以及二进制数据进行加密，而不需要了解密码学的实现细节</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_下载"><a class="anchor" href="#_下载"></a>2. 下载</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>jasypt的源码托管在 <a href="https://github.com/jasypt/jasypt">github</a>上，可以在release中下载相关jar包。</p>
+</div>
+<div class="paragraph">
+<p>jasypt的jar包分为下面几类：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>jasypt包含了核心代码</p>
+</li>
+<li>
+<p>jasypt-spring用于jasypt和spring框架整合时使用</p>
+</li>
+<li>
+<p>jasypt-springsecurity用于jasypt和springsecurity框架整合时使用</p>
+</li>
+<li>
+<p>jasypt-hibernate用于jasypt和hibernate框架整合时使用</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>如果是maven项目，添加如下依赖即可，目前最新版本为1.9.3，artifactId可以根据项目需求从上面介绍的jar包中选择</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.jasypt&lt;/groupId&gt;
+    &lt;artifactId&gt;jasypt-spring4&lt;/artifactId&gt;
+    &lt;version&gt;1.9.3&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_基础用法"><a class="anchor" href="#_基础用法"></a>3. 基础用法</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_消息摘要"><a class="anchor" href="#_消息摘要"></a>3.1. 消息摘要</h3>
+<div class="paragraph">
+<p>消息摘要通常用于验证文件或数据完整性，使用单向加密算法，任意大小的文件或数据都会生成固定长度的摘要字符串，<code>org.jasypt.util.digest.Digester</code> 用于生成消息摘要</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">Digester digester = new Digester();
+digester.setAlgorithm("SHA-1");
+String message = "hello";
+byte[] digest = digester.digest(message.getBytes());
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_密码加密"><a class="anchor" href="#_密码加密"></a>3.2. 密码加密</h3>
+<div class="paragraph">
+<p>为了保证密码不能被破解，通常也是使用单向加密算法进行加密，这一点与上文的计算消息摘要是类似的，但密码的安全要求更高，如果密码被破解就意味着用户的一切隐私都会被攻击者获取，所以在对密码进行加密时通常要遵循以下原则：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>使用至少8个字节的salt与密码一起计算摘要，这样是为了防止相同的用户密码计算的摘要也相同</p>
+</li>
+<li>
+<p>计算摘要时至少迭代1000次，增加密码暴力破解的难度</p>
+</li>
+<li>
+<p>计算摘要前使用固定的编码将字符串转为字节数组，避免不同平台默认编码不同导致密码验证失败</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>整个密码加密的过程可以用下图来说明</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="http://www.jasypt.org/images/passwordEncryption.png" alt="passwordEncryption">
+</div>
+<div class="title">Figure 1. Password encryption process</div>
+</div>
+<div class="paragraph">
+<p><code>org.jasypt.util.password.BasicPasswordEncryptor</code> 可以用于加密密码也可以用于登录时校验密码</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">String userPassword = "1qaz";
+BasicPasswordEncryptor passwordEncryptor = new BasicPasswordEncryptor();
+String encryptedPassword = passwordEncryptor.encryptPassword(userPassword);
+String inputPassword = "!QAZ";
+if (passwordEncryptor.checkPassword(inputPassword, encryptedPassword)) {
+    // correct!
+} else {
+    // bad login!
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>org.jasypt.util.password.StrongPasswordEncryptor</code> 实现了更强的密码安全性，实质上就是做了更复杂的加密运算</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">String userPassword = "1234";
+StrongPasswordEncryptor passwordEncryptor = new StrongPasswordEncryptor();
+String encryptedPassword = passwordEncryptor.encryptPassword(userPassword);
+String inputPassword = "!@#$";
+if (passwordEncryptor.checkPassword(inputPassword, encryptedPassword)) {
+    // correct!
+} else {
+    // bad login!
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_文本加密"><a class="anchor" href="#_文本加密"></a>3.3. 文本加密</h3>
+<div class="paragraph">
+<p>文本加密需要使用双向加密算法，能够解密还原明文</p>
+</div>
+<div class="paragraph">
+<p><code>org.jasypt.util.text.BasicTextEncryptor</code> 使用正常复杂度的加密算法实现文本加解密，加解密前需要先设置密码</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
+String myEncryptionPassword = "123456";
+textEncryptor.setPassword(myEncryptionPassword);
+String myText = "myText";
+String myEncryptedText = textEncryptor.encrypt(myText);
+String plainText = textEncryptor.decrypt(myEncryptedText);
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>org.jasypt.util.text.StrongTextEncryptor</code> 使用复杂度更高的机密算法实现加解密，使用方法与BasicTextEncryptor类似</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_配置文件加密"><a class="anchor" href="#_配置文件加密"></a>3.4. 配置文件加密</h3>
+<div class="paragraph">
+<p>jasypt提供了 <code>org.jasypt.properties.EncryptableProperties</code> 用于加载包含加密内容的.properties配置文件，配置文件中可以混合使用明文的value和加密后的value，只需要将加密后的value放在 <code>ENC(&#8230;&#8203;)</code> 内</p>
+</div>
+<div class="paragraph">
+<p>例如一个数据库的配置文件内容为：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">datasource.driver=com.mysql.jdbc.Driver
+datasource.url=jdbc:mysql://localhost/reportsdb
+datasource.username=reportsUser
+datasource.password=ENC(G6N718UuyPE5bHyWKyuLQSm02auQPUtm)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>使用EncryptableProperties读取配置文件内容：</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java"> /*
+  * 首先，创建一个用于加解密的StringEncryptor并设置加密算法和加解密的密码
+  *
+  */
+ StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
+ encryptor.setPassword("jasypt"); // could be got from web, env variable...
+ encryptor.setAlgorithm("PBEWithHMACSHA512AndAES_256");
+ encryptor.setIvGenerator(new RandomIvGenerator());
+
+ /*
+  * 创建EncryptableProperties的实例并加载配置文件
+  */
+ Properties props = new EncryptableProperties(encryptor);
+ props.load(new FileInputStream("/path/to/my/configuration.properties"));
+
+ /*
+  * 使用相同的方式获取加密内容和未加密内容，EncryptableProperties会自动对ENC(...)格式的内容进行解密
+  */
+ String datasourceUsername = props.getProperty("datasource.username");
+ String datasourcePassword = props.getProperty("datasource.password");
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>上面的示例中直接将加解密的密码写死在代码中，这样仍然不够安全，推荐使用环境变量保存密码，读取密码后删除或重置对应的环境变量</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_命令行工具"><a class="anchor" href="#_命令行工具"></a>4. 命令行工具</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>jasypt提供了几个工具用于命令行下进行密码加解密、计算消息摘要。</p>
+</div>
+<div class="paragraph">
+<p>在jasypt的git仓库的release中找到jasypt-$VERSION-dist.zip下载并解压，bin目录中包含下面几个脚本，.bat和.sh的版本分别用于Windows和Linux下使用：</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>encrypt</code>: 基于密码的加密操作</p>
+</li>
+<li>
+<p><code>decrypt</code>: 基于密码的解密操作</p>
+</li>
+<li>
+<p><code>digest</code>: 计算消息摘要</p>
+</li>
+<li>
+<p><code>listAlgorithms</code>: 列出支持的摘要算法和加密算法</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>使用encrypt加密的示例如下，输入参数必须包含input和password，代表加密内容和密码</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jasypt1.png" alt="jasypt1">
+</div>
+</div>
+<div class="paragraph">
+<p>listAlgorithms可以列出支持的摘要算法和加密算法如下</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jasypt2.png" alt="jasypt2">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring配置加密"><a class="anchor" href="#_spring配置加密"></a>5. Spring配置加密</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_使用方式"><a class="anchor" href="#_使用方式"></a>5.1. 使用方式</h3>
+<div class="paragraph">
+<p>如下面示例所示，spring项目中通常使用 <code>PropertyPlaceholderConfigurer</code> 加载配置文件，它可以对bean中的属性值进行占位符替换；如果配置文件中的属性值进行了加密，只需要将 <code>PropertyPlaceholderConfigurer</code> 替换为 <code>org.jasypt.spring4.properties.EncryptablePropertySourcesPlaceholderConfigurer</code> 并提供一个 <code>StringEncryptor</code> 的实例用于对配置内容进行解密。此处使用了 <code>StringEncryptor</code> 的标准实现 <code>StandardPBEStringEncryptor</code> 并配置它使用 <code>PBEWithMD5AndDES</code> 加密算法，密码从环境变量 <code>APP_ENCRYPTION_PASSWORD</code> 中读取；服务启动后可以删除或重置此环境变量以免被攻击者获取。</p>
+</div>
+<div class="paragraph">
+<p>配置文件中的密文可以执行上文介绍的命令行工具encrypt获取，注意密文需要包裹在 <code>ENC(&#8230;&#8203;)</code> 内，用于和明文区分。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;!-- 原来的配置文件加载类，用于替换bean定义中的占位符 --&gt;
+&lt;!--
+&lt;bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"&gt;
+    &lt;property name="locations"&gt;
+        &lt;list&gt;
+            &lt;value&gt;classpath:dataSource.properties&lt;/value&gt;
+        &lt;/list&gt;
+    &lt;/property&gt;
+&lt;/bean&gt;
+--&gt;
+
+&lt;!-- 使用PBEWithMD5AndDES的加密算法进行加解密,密码从环境变量APP_ENCRYPTION_PASSWORD中读取 --&gt;
+&lt;bean id="environmentVariablesConfiguration"
+      class="org.jasypt.encryption.pbe.config.EnvironmentStringPBEConfig"&gt;
+    &lt;property name="algorithm" value="PBEWithMD5AndDES" /&gt;
+    &lt;property name="passwordEnvName" value="APP_ENCRYPTION_PASSWORD" /&gt;
+&lt;/bean&gt;
+
+&lt;bean id="configurationEncryptor"
+      class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor"&gt;
+    &lt;property name="config" ref="environmentVariablesConfiguration" /&gt;
+&lt;/bean&gt;
+
+&lt;!-- 替换PropertyPlaceholderConfigurer并提交构造器参数 --&gt;
+&lt;bean id="propertyConfigurer" class="org.jasypt.spring4.properties.EncryptablePropertySourcesPlaceholderConfigurer"&gt;
+    &lt;constructor-arg ref="configurationEncryptor" /&gt;
+    &lt;property name="locations"&gt;
+        &lt;list&gt;
+            &lt;value&gt;classpath:dataSource.properties&lt;/value&gt;
+        &lt;/list&gt;
+    &lt;/property&gt;
+&lt;/bean&gt;
+
+&lt;!-- 定义bean，占位符${...}会使用配置文件中对应的属性值进行替换 --&gt;
+&lt;bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource"&gt;
+    &lt;property name="username" value="${druid.username}" /&gt;
+	&lt;property name="password" value="${druid.password}" /&gt;
+	&lt;property name="driverClassName" value="${druid.driverClassName}" /&gt;
+&lt;/bean&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_实现原理"><a class="anchor" href="#_实现原理"></a>5.2. 实现原理</h3>
+<div class="sect3">
+<h4 id="_propertyplaceholderconfigurer原理"><a class="anchor" href="#_propertyplaceholderconfigurer原理"></a>5.2.1. PropertyPlaceholderConfigurer原理</h4>
+<div class="paragraph">
+<p>在介绍 <code>EncryptablePropertySourcesPlaceholderConfigurer</code> 前有必要先介绍 <code>PropertyPlaceholderConfigurer</code> 的原理，它是如何实现bean属性值的占位符替换的呢？</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/PropertyPlaceholderConfigurer.png" alt="PropertyPlaceholderConfigurer">
+</div>
+</div>
+<div class="paragraph">
+<p>从 <code>PropertyPlaceholderConfigurer</code> 的继承关系可以看出它实现了 <code>BeanFactoryPostProcessor</code> 接口，熟悉spring设计的人都了解 <code>BeanFactoryPostProcessor</code> 正是spring提供给开发者的扩展接口，在它的 <code>postProcessBeanFactory</code> 中开发者可以修改bean的定义信息，因为此时所有的bean都还没有实例化</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface BeanFactoryPostProcessor {
+
+	/**
+	 * Modify the application context's internal bean factory after its standard
+	 * initialization. All bean definitions will have been loaded, but no beans
+	 * will have been instantiated yet. This allows for overriding or adding
+	 * properties even to eager-initializing beans.
+	 * @param beanFactory the bean factory used by the application context
+	 * @throws org.springframework.beans.BeansException in case of errors
+	 */
+	void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException;
+
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>那么 <code>PropertyPlaceholderConfigurer</code> 在 <code>postProcessBeanFactory</code> 中完成了哪些工作呢</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class PropertyPlaceholderConfigurer extends PlaceholderConfigurerSupport {
+
+    /**
+     * 该方法实际在PropertyResourceConfigurer中，可以通过上面的继承关系图查看
+     */
+    @Override
+	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+		try {
+            //加载.properties中的配置信息
+			Properties mergedProps = mergeProperties();
+            //转换mergedProps的value，如果有必要的话
+			convertProperties(mergedProps);
+			// Let the subclass process the properties.
+			processProperties(beanFactory, mergedProps);
+		}
+		catch (IOException ex) {
+			throw new BeanInitializationException("Could not load properties", ex);
+		}
+	}
+
+	/**
+	 * 查看beanFactoryToProcess中的所有BeanDefinition并使用props中的属性值替换${...}占位符
+	 *
+	 */
+	@Override
+	protected void processProperties(ConfigurableListableBeanFactory beanFactoryToProcess, Properties props)
+			throws BeansException {
+
+		StringValueResolver valueResolver = new PlaceholderResolvingStringValueResolver(props);
+		doProcessProperties(beanFactoryToProcess, valueResolver);
+	}
+
+    //该方法实际定义在PlaceholderConfigurerSupport中
+    protected void doProcessProperties(ConfigurableListableBeanFactory beanFactoryToProcess,
+			StringValueResolver valueResolver) {
+
+		BeanDefinitionVisitor visitor = new BeanDefinitionVisitor(valueResolver);
+
+		String[] beanNames = beanFactoryToProcess.getBeanDefinitionNames();
+		for (String curName : beanNames) {
+			// Check that we're not parsing our own bean definition,
+			// to avoid failing on unresolvable placeholders in properties file locations.
+			if (!(curName.equals(this.beanName) &amp;&amp; beanFactoryToProcess.equals(this.beanFactory))) {
+				BeanDefinition bd = beanFactoryToProcess.getBeanDefinition(curName);
+				try {
+                    //使用Visitor模式修改属性值
+					visitor.visitBeanDefinition(bd);
+				}
+				catch (Exception ex) {
+					throw new BeanDefinitionStoreException(bd.getResourceDescription(), curName, ex.getMessage(), ex);
+				}
+			}
+		}
+
+		beanFactoryToProcess.resolveAliases(valueResolver);
+
+		beanFactoryToProcess.addEmbeddedValueResolver(valueResolver);
+	}
+
+    //该方法实际在PropertyResourceConfigurer中
+    protected void convertProperties(Properties props) {
+		Enumeration&lt;?&gt; propertyNames = props.propertyNames();
+		while (propertyNames.hasMoreElements()) {
+			String propertyName = (String) propertyNames.nextElement();
+			String propertyValue = props.getProperty(propertyName);
+			String convertedValue = convertProperty(propertyName, propertyValue);
+			if (!ObjectUtils.nullSafeEquals(propertyValue, convertedValue)) {
+				props.setProperty(propertyName, convertedValue);
+			}
+		}
+	}
+
+    //该方法实际在PropertyResourceConfigurer中
+    protected String convertProperty(String propertyName, String propertyValue) {
+		return convertPropertyValue(propertyValue);
+	}
+
+    //该方法实际在PropertyResourceConfigurer中，默认返回原属性值
+    protected String convertPropertyValue(String originalValue) {
+		return originalValue;
+	}
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>上述代码使用了模板方法模式，在父类 <code>PropertyResourceConfigurer</code> 的 <code>postProcessBeanFactory</code> 方法中定义了整个属性处理过程：先读取properties，然后转换部分属性值，最后执行处理逻辑，同时将 <code>convertProperties</code> 和 <code>processProperties</code> 声明为 <code>protected</code> 供子类具体实现，<code>PropertyPlaceholderConfigurer</code> 提供了 <code>processProperties</code> 的具体实现但没有实现 <code>convertProperties</code> 方法，也就是说 <code>convertProperties</code> 仍然返回的是原来配置文件读取到的属性值。</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_encryptablepropertysourcesplaceholderconfigurer原理"><a class="anchor" href="#_encryptablepropertysourcesplaceholderconfigurer原理"></a>5.2.2. EncryptablePropertySourcesPlaceholderConfigurer原理</h4>
+<div class="paragraph">
+<p>通过上文对 <code>PropertyPlaceholderConfigurer</code> 的介绍可以发现，spring实际上已经想到了可能需要对配置文件读取到的值进行转换，所以提供了 <code>convertProperties</code> 方法供子类实现， <code>EncryptablePropertySourcesPlaceholderConfigurer</code> 的解密逻辑正是在 <code>convertProperties</code> 方法内完成的</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public final class EncryptablePropertySourcesPlaceholderConfigurer
+        extends PropertySourcesPlaceholderConfigurer {
+
+    private final StringEncryptor stringEncryptor;
+
+        @Override
+	protected String convertPropertyValue(final String originalValue) {
+		if (!PropertyValueEncryptionUtils.isEncryptedValue(originalValue)) {
+			return originalValue;
+		}
+		if (this.stringEncryptor != null) {
+            //解密后返回
+			return PropertyValueEncryptionUtils.decrypt(originalValue,
+					this.stringEncryptor);
+
+		}
+		return PropertyValueEncryptionUtils.decrypt(originalValue, this.textEncryptor);
+	}
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_spring_boot配置加密"><a class="anchor" href="#_spring_boot配置加密"></a>6. Spring Boot配置加密</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Spring Boot配置加密同样很简单，GitHub上已经有jasypt对应的 <a href="https://github.com/ulisesbocchio/jasypt-spring-boot">starter</a>项目，本节介绍它的常见用法，其它用法参考项目主页</p>
+</div>
+<div class="paragraph">
+<p>首先，添加jasypt-starter的依赖如下</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.github.ulisesbocchio&lt;/groupId&gt;
+    &lt;artifactId&gt;jasypt-spring-boot-starter&lt;/artifactId&gt;
+    &lt;version&gt;3.0.2&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>然后，使用encrypt脚本生成加密后内容，注意此处必须添加 <code>saltGeneratorClassName=org.jasypt.salt.RandomSaltGenerator</code> 和 <code>ivGeneratorClassName=org.jasypt.iv.RandomIvGenerator</code> 两个选项，因为starter默认使用的 <code>StringEncryptor</code> 是配置了这两个选项的</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/jasypt3.png" alt="jasypt3">
+</div>
+</div>
+<div class="paragraph">
+<p>在 <code>application.yml</code> 中配置加密后的密文和加解密配置即可</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">a:
+  b: ENC(w5MDzXBWyDxLJ4PS8gtFvxvAPUEtF3Y2)  #密文
+jasypt:
+  encryptor:
+    algorithm: PBEWithMD5AndDES
+    password: ${APP_ENCRYPTION_PASSWORD} #指定环境变量</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>如果要对 <code>StringEncryptor</code> 做更详细的配置，可以自定义一个名称为jasyptStringEncryptor类型为 <code>StringEncryptor</code> 的bean如下，此时 <code>application.yml</code> 中jasypt相关的配置都不会生效</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Configuration
+public class JasyptConfiguration {
+
+    @Bean("jasyptStringEncryptor")
+    public StringEncryptor stringPBEConfig(Environment environment){
+        StandardPBEStringEncryptor stringEncryptor = new StandardPBEStringEncryptor();
+        stringEncryptor.setAlgorithm("PBEWithMD5AndDES");
+        stringEncryptor.setPassword(environment.getProperty("APP_ENCRYPTION_PASSWORD"));
+        return stringEncryptor;
+    }
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_环境变量重置"><a class="anchor" href="#_环境变量重置"></a>7. 环境变量重置</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>上文提到最安全的方法是每次服务启动读取环境变量完成后就重置或移除环境变量，Java提供了 <code>System.getenv()</code> 方法用于获取环境变量，但并未提供修改环境变量的方法，所以只能通过 <code>Runtime.getRuntime().exec(String command)</code> 调用操作系统命令的方法实现，Windows可以使用setx命令，Linux可以使用export命令。</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_示例说明"><a class="anchor" href="#_示例说明"></a>8. 示例说明</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>上文中密钥都是从环境变量中获取的，主要是为了避免持久化保存的密钥泄漏问题，实际上密钥也能以其它方式保存，本次示例中直接硬编码在配置中。</p>
+</div>
+<div class="sect2">
+<h3 id="_springmvcstruts2示例"><a class="anchor" href="#_springmvcstruts2示例"></a>8.1. SpringMVC/Struts2示例</h3>
+<div class="listingblock">
+<div class="title">添加依赖</div>
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">        &lt;dependency&gt;
+            &lt;groupId&gt;org.jasypt&lt;/groupId&gt;
+            &lt;artifactId&gt;jasypt-spring4&lt;/artifactId&gt;
+            &lt;version&gt;1.9.3&lt;/version&gt;
+        &lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>新建properties配置文件，属性值使用加密的格式，其中密文使用 <code>MyEncryptor</code> 类加密得到</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">name=ENC(UjfKzywOXO2vJrq5kajvwg==)
+age=ENC(d9nkfwy27Kk9LtZAV2IB1A==)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在spring配置文件中读取上面的配置文件并以占位符的方式使用，注意 <code>StandardPBEStringEncryptor</code> 的密码必须与上一步加密使用的密码相同。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">	&lt;bean id="configurationEncryptor"
+		  class="org.jasypt.encryption.pbe.StandardPBEStringEncryptor"&gt;
+		&lt;property name="password" value="p0nsh1ne"/&gt;
+	&lt;/bean&gt;
+
+	&lt;bean id="propertyConfigurer" class="org.jasypt.spring4.properties.EncryptablePropertySourcesPlaceholderConfigurer"&gt;
+		&lt;constructor-arg ref="configurationEncryptor" /&gt;
+		&lt;property name="locations"&gt;
+			&lt;list&gt;
+				&lt;value&gt;classpath:user.properties&lt;/value&gt;
+			&lt;/list&gt;
+		&lt;/property&gt;
+	&lt;/bean&gt;
+
+	&lt;bean class="io.github.pxzxj.User"&gt;
+		&lt;property name="name" value="${name}"/&gt;
+		&lt;property name="age" value="${age}" /&gt;
+	&lt;/bean&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>spring提供了 <code>@PropertySource</code> 注解也可以加载properties配置文件，要注意以这种方式加载的配置是无法自动解密的,如果确实有此需求需要额外开发。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">description=demo of jasypt for springmvc</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@PropertySource("classpath:app.properties")
+public class QController {
+
+    @Autowired
+    private User user;
+
+    @Value("${description}")
+    private String description;
+
+    @RequestMapping("/user")
+    public User a(){
+        user.setDescription(description);
+        return user;
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>启动项目，访问 <a href="http://localhost:8080/user" class="bare">http://localhost:8080/user</a> 查看用户信息</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_springboot示例"><a class="anchor" href="#_springboot示例"></a>8.2. SpringBoot示例</h3>
+<div class="listingblock">
+<div class="title">添加依赖</div>
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">        &lt;dependency&gt;
+            &lt;groupId&gt;com.github.ulisesbocchio&lt;/groupId&gt;
+            &lt;artifactId&gt;jasypt-spring-boot-starter&lt;/artifactId&gt;
+            &lt;version&gt;3.0.3&lt;/version&gt;
+        &lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在 <code>application.yml</code> 中声明使用的密钥</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yml" data-lang="yml">jasypt:
+  encryptor:
+    password: p0nsh1ne</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>application.yml</code> 或者其它properties配置文件中使用 <code>ENC()</code> 的格式声明属性值，密文使用 <code>MyEncryptor</code> 获得，加密使用的密钥必须与上面配置的相同。</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yml" data-lang="yml">user:
+  name: ENC(8772TyKou2uUTpxN0u50kpaWCBcq1OyuxUBhtWxiy5GxKguDytDslGmAKLXZkS3S)
+userage: ENC(FQ6DqDcESRvlMvLmrQsg5DQ6sQDFPG6FJngffT5+BFPpUd8t4r/th7XEktl9H+d0)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>在spring boot中使用 <code>@PropertySource</code> 是可以自动解密属性值的</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-properties" data-lang="properties">description=ENC(X/djxKOlwYwCdQoJtzVnO2UsAYMT3rUZRB7wlp3O6kxv0SbvS/DUCtMQkTsdWNavwPXM5swC+D53Ym8dp1op0A==)</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@RestController
+@PropertySource("classpath:app.properties")
+public class QController {
+
+    @Autowired
+    private UserProperties userProperties;
+
+    @Value("${description}")
+    private String description;
+
+    @Value("${userage}")
+    private Integer userage;
+
+    @RequestMapping("/user")
+    public User a(){
+        User user = new User();
+        user.setName(userProperties.getName());
+        user.setAge(userage);
+        user.setDescription(description);
+        return user;
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>本项目中使用了三种配置读取的方式，第一种是使用@ConfigurationProperties声明的配置类，第二种是直接使用@Value读取application.yml中的属性，第三种是使用@PropertySource加载properties文件，最终都能正常解密。</p>
+</div>
+<div class="paragraph">
+<p>启动项目，访问 <a href="http://localhost:8080/user" class="bare">http://localhost:8080/user</a> 查看用户信息</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-06-09 07:15:35 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

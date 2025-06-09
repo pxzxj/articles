@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2025/04/15">
+<title>Spring Cloud Gateway记录操作日志</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>Spring Cloud Gateway记录操作日志</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2025/04/15</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_基础信息">1. 基础信息</a></li>
+<li><a href="#_添加依赖">2. 添加依赖</a></li>
+<li><a href="#_数据库配置">3. 数据库配置</a></li>
+<li><a href="#_类">4. 类</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_基础信息"><a class="anchor" href="#_基础信息"></a>1. 基础信息</h2>
+<div class="sectionbody">
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+Spring Boot Version  
+</td>
+<td class="hdlist2">
+<p>2.7.18</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Spring Cloud Version  
+</td>
+<td class="hdlist2">
+<p>2021.0.3</p>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_添加依赖"><a class="anchor" href="#_添加依赖"></a>2. 添加依赖</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">    &lt;dependencies&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+            &lt;artifactId&gt;spring-boot-starter-data-r2dbc&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+        &lt;dependency&gt;
+            &lt;groupId&gt;org.mariadb&lt;/groupId&gt;
+            &lt;artifactId&gt;r2dbc-mariadb&lt;/artifactId&gt;
+        &lt;/dependency&gt;
+    &lt;/dependencies&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_数据库配置"><a class="anchor" href="#_数据库配置"></a>3. 数据库配置</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-yaml" data-lang="yaml">spring:
+  r2dbc:
+    url: r2dbc:mariadb://127.0.0.1:3306/cmtt
+    username: root
+    password: 1qaz@WSX</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_类"><a class="anchor" href="#_类"></a>4. 类</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title">Log.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class Log {
+
+	@Id
+	private Long id;
+
+	private String type;
+
+	private String detail;
+
+	private String principal;
+
+	private String requestUri;
+
+	private Integer responseCode;
+
+	private String remoteAddress;
+
+	private LocalDateTime occurTime;
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">SystemNode.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Table(name = "system_node")
+public class SystemNode {
+
+	public static final String TYPE_MENU = "menu";
+
+	public static final String TYPE_BUTTON = "button";
+
+	@Id
+	private Long nodeId;
+
+	private String nodeText;
+
+	/**
+	 * 主题
+	 */
+	private String title;
+
+	/**
+	 * 状态
+	 */
+	private int state;
+
+	/**
+	 * 父节点
+	 */
+	private Long pid;
+
+	/**
+	 * 级别
+	 */
+	private int levels;
+
+	/**
+	 * 排序
+	 */
+	private int sort;
+
+	/**
+	 * 备注
+	 */
+	private String remark;
+
+	/**
+	 * 类型
+	 */
+	private String type;
+
+	/**
+	 * 链接
+	 */
+	private String url;
+
+	/***/
+	private String componentId;
+
+	/**
+	 * leftMenu中的图标显示
+	 */
+	private String imageClassName;
+
+	/**
+	 * 页面链接
+	 */
+	private String pageUrl;
+
+	private String permissions;
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">LogRepository.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface LogRepository extends ReactiveCrudRepository&lt;Log, Long&gt; {
+
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">SystemNodeRepository.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public interface SystemNodeRepository extends ReactiveCrudRepository&lt;SystemNode, Long&gt; {
+
+
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">LogGlobalFilter.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class LogGlobalFilter implements GlobalFilter, InitializingBean {
+
+	private final LogRepository logRepository;
+
+	private final SystemNodeRepository systemNodeRepository;
+
+	private final ConcurrentHashMap&lt;String, String&gt; apiMenuMap = new ConcurrentHashMap&lt;&gt;();
+
+	public LogGlobalFilter(LogRepository logRepository,
+			SystemNodeRepository systemNodeRepository) {
+		this.logRepository = logRepository;
+		this.systemNodeRepository = systemNodeRepository;
+	}
+
+	@Override
+	public Mono&lt;Void&gt; filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+		return chain.filter(exchange)
+				.then(exchange.getPrincipal())
+				.defaultIfEmpty(() -&gt; "")
+				.flatMap(principal -&gt; saveLog(exchange, principal))
+				.flatMap(log -&gt; Mono.empty());
+	}
+
+	public Mono&lt;Log&gt; saveLog(ServerWebExchange exchange, Principal principal) {
+		Log log = new Log();
+		log.setType("API访问");
+		log.setPrincipal(principal.getName());
+		log.setOccurTime(LocalDateTime.now());
+		String requestUri = exchange.getRequest().getPath().value();
+		log.setRequestUri(requestUri);
+		log.setDetail(apiMenuMap.get(requestUri));
+		if (exchange.getResponse().getStatusCode() != null) {
+			log.setResponseCode(exchange.getResponse().getStatusCode().value());
+		}
+		if (exchange.getRequest().getRemoteAddress() != null) {
+			log.setRemoteAddress(exchange.getRequest().getRemoteAddress().toString());
+		}
+		return logRepository.save(log);
+	}
+
+	public Mono&lt;Void&gt; refresh() {
+		return systemNodeRepository.findAll().collectList().map(nodes -&gt; {
+			populateApiMenuMap(nodes);
+			return nodes;
+		}).flatMap(nodes -&gt; Mono.empty());
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		systemNodeRepository.findAll().collectList().map(nodes -&gt; {
+			populateApiMenuMap(nodes);
+			return nodes;
+		}).subscribe();
+	}
+
+	public void populateApiMenuMap(List&lt;SystemNode&gt; systemNodeList) {
+		Map&lt;Long, SystemNode&gt; map = new HashMap&lt;&gt;();
+		for (SystemNode systemNode : systemNodeList) {
+			map.put(systemNode.getNodeId(), systemNode);
+		}
+		for (SystemNode systemNode : systemNodeList) {
+			String permissions = systemNode.getPermissions();
+			String menu = "";
+			SystemNode sn = systemNode;
+			while (sn != null) {
+				if ("".equals(menu)) {
+					menu = sn.getNodeText();
+				}
+				else {
+					menu = sn.getNodeText() + "-" + menu;
+				}
+				if (sn.getPid() != null) {
+					sn = map.get(sn.getPid());
+				}
+				else {
+					sn = null;
+				}
+			}
+			if (StringUtils.hasText(permissions)) {
+				String[] apiArray = permissions.split("\\s*,\\s*");
+				for (String api : apiArray) {
+					apiMenuMap.put(api, menu);
+				}
+			}
+		}
+	}
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">WebFluxConfig.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Configuration
+public class WebFluxConfig {
+
+	@Bean
+	public LogGlobalFilter logGlobalFilter(LogRepository logRepository, SystemNodeRepository systemNodeRepository) {
+		return new LogGlobalFilter(logRepository, systemNodeRepository);
+	}
+}
+</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">LogController.java</div>
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@RestController
+public class LogController {
+
+	private final LogGlobalFilter logGlobalFilter;
+
+	public LogController(LogGlobalFilter logGlobalFilter) {
+		this.logGlobalFilter = logGlobalFilter;
+	}
+
+	@PostMapping("/log/refresh")
+	public Mono&lt;Void&gt; refresh() {
+		return logGlobalFilter.refresh();
+	}
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2025-06-09 07:15:35 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>
