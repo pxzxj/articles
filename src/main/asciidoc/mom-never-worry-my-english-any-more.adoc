@@ -682,3 +682,282 @@ a blind eye to them.
 11. 这款产品的销量已经超过了之前最大胆的估计。
 +
 The sales of this product have surpassed the wildest estimates before.
+
+== 外刊精读140 / Science / 美国数据统计系统
+
+bilibili::BV1dLKtzqEEh[]
+
+1.
+
+[red]#critical adj. 至关重要的 (of the greatest importance)#
+
+各方的配合是这个方案成功的关键因素。
+
+'''
+
+[red]#flourish vi. 繁荣， 蓬勃发展(to grow or develop successfully)#
+
+稳定的国家政策能够在很大程度上促进各行各业的繁荣发展。
+
+'''
+
+[red]#manner n. 种类，类型 (all manner of sth 各种各样的)#
+
+[red]#informed adj. 了解情况的 (well-informed adj. 见多识广的)#
+
+广告宣传能够让消费者在够买商品的时候做出有根据的选择。
+
+'''
+
+[red]#context n. 环境，背景#
+
+[red]#notably adv. 特别地；明显地#
+
+上个季度的销量下降尤为明显。
+
+'''
+
+[red]#amid  /əˈmɪd/ prep. 在…当中#
+
+upheaval n. 动荡，剧变
+
+harness v. 掌控，利用(to control sth, usually in order to use its power)
+
+Reliable, relevant, statistical information helps +
+#businesses to invest and flourish; +
+governments at the local, state and national levels to make +
+critical decisions on policy and public services;# +
+#and individuals and families to invest in their future.#
+
+2.
+
+premier  /prɪˈmɪr/ adj. 首位的， 首要的
+
+aggregate  /ˈæɡrəɡeɪt/ v. 聚集
+
+subscription n. 订阅
+
+underpinning n. 基础，根基 (support, strength, or the basic structure of sth)
+
+3.
+
+hamper v. 妨碍，阻碍
+
+[red]#bold adj. 勇敢的#
+
+counter v. 反抗，对抗
+
+burgeoning / ˈbɜːrdʒənɪŋ / adj. 迅速发展的
+
+predate / ˌpriːˈdeɪt / vt. 早于….(to have existed or happened before another thing)
+
+[red]#imperative / ɪmˈperətɪv / adj. &n. 极重要的 (extremely important or urgent)#
+
+4.
+
+[red]#blend v. & n. 融合，混合#
+
+[red]#(Their music is a blend of jazz and hip-hop.)#
+
+5.
+
+[red]#prior to 在…之前 (before)#
+
+[red]#squeeze v. 挤压#
+
+incremental / ɪnkrəˈməntl / adj. 递增的，渐进的
+
+optimally / ˈɑːptɪməli / adv. 最佳地
+
+[red]#stretch v. 到…的限度，竭尽 (Many families’ budgets are already stretched to breaking point.)#
+
+inhibit v. 抑制，约束
+
+prioritization / praɪˌɔːrətəˈzeɪʃn / n. 优先次序
+
+6.
+
+consolidated adj. 加强的，巩固的
+
+[red]#stand out 显眼，突出，出众 (to be noticeable)#
+
+她在众多申请这个职位的人当中脱颖而出。
+
+'''
+
+avail  /əˈveɪl/ n. 效用，帮助
+
+territoriality / ˌterəˌtɔːriˈæləti / n. 领土权
+
+7.
+
+agility n. 敏捷，灵活
+
+statutory / ˈstætʃətɔːri / adj. 法定的(decided or controlled by law)
+
+confidentiality / ˌkɑːnfɪˌdenʃiˈæləti / n. 秘密，机密
+
+[red]#execute v. 实施，执行 (to execute a deal/plan)#
+
+[red]#policy-driven adj. 政策驱动的#
+
+[red]#(money-driven person， tourism-driven city， market-driven economy)#
+
+工作与娱乐的区别在于，前者是目的导向的，后者是过程导向的。
+
+'''
+
+[red]#objectivity n. 客观(objective 客观的)#
+
+[red]#irreplaceable adj. 不可替代的，独一无二的#
+
+We urge the administration to +
+#reorganize the statistical system, +
+with particular care to improve agility by reducing barriers to sharing data and coordination while maintaining strong statutory privacy and confidentiality protections for statistical data;#
+
+#achieve economies of scale and scope across statistical agencies +
+by sharing expertise, information technology, training, software, sample frames, and data standards;#
+
+and #increase public trust +
+by ensuring that the consolidated system can design and execute statistical methods outside of policy and political influence while remaining responsive to policy-driven needs.#
+
+8.
+
+dwindle v. 减少
+
+[red]#civil adj. 平民的(not military or religious, or relating to the ordinary people of a country)#
+
+[red]#(civil service 公务员 civil law 民法 civil use 民用 civilian 平民)#
+
+vigorous adj. 充满活力的，强有力的
+
+oversight n. 监管，监督
+
+[red]#in accordance with 依照#
+
+fragmented adj. 支离破碎的
+
+[red]#community n. 社区，群体，团体，界(the people living in one particular area or people who are considered as a unit because of their common interests, social group, or nationality)#
+
+[red]#(There is a large black/Chinese community living in this area.)#
+
+他的研究引起了科学界的激烈争论。
+
+'''
+
+overdue adj. 过期的，延误的
+
+[red]#deteriorate v. 恶化#
+
+[red]#(The political situation in the region has deteriorated rapidly.)#
+
+我们不能等到情况恶化以后才开始采取行动。
+
+'''
+
+1. 各方的配合是这个方案成功的关键因素。
++
+
+'''
+
+2. 稳定的国家政策能够在很大程度上促进各行各业的繁荣发展。
++
+
+'''
+
+3. 广告宣传能够让消费者在够买商品的时候做出有根据的选择。
++
+
+'''
+
+4. 上个季度的销量下降尤为明显。
++
+
+'''
+
+5. 她在众多申请这个职位的人当中脱颖而出。
++
+
+'''
+
+6. 工作与娱乐的区别在于，前者是目的导向的，后者是过程导向的。
++
+
+'''
+
+7. 他的研究引起了科学界的激烈争论。
++
+
+'''
+
+8. 我们不能等到情况恶化以后才开始采取行动。
+
+=== 139期翻译练习参考
+
+1. 他的研究工作极大地促进了这个研究领域的发展。
++
+
+His research has greatly advanced the development of this field.
+
+2. 老年人往往很保守，对任何新的事物都有些怀疑。
++
+
+The elderly are always conservative and a bit sceptical about any novel things.
+
+3. 政府应该通过立法来限制汽车尾气排放。
++
+
+The government should limit the vehicle emission through legislation.
+
+4. 网络的普及能够让更多人得到学习的机会。
++
+
+More people can have easy access to the opportunity of learning thanks to the popularization of the Internet.
+
+5. 移动支付的普及反映了人们消费习惯的变化。
++
+
+The popularity of mobile payment mirrors the shift in people’s consumption habits.
+
+6. 支持控枪的人认为这是保护公民安全的必要措施。
++
+
+The proponents of curbing gun violence believe it’s the necessary measure to protect civilians.
+
+7. 科学家们试图通过一些合理的办法来缓解气候变化会人类的影响。
++
+
+Scientists are exploring viable measures to mitigate the impacts of
+climate changes on humans.
+
+8. 酒驾应该处以重罚。( … be imposed on… )
++
+
+Heavy punishment should be imposed on drunk driving.
+
+9. 对于一些低收入的美国家庭来说，他们无法享受优质的医疗服务。
++
+
+For some American low-income families, high-quality medical service is out of their reach.
+
+10. 我们需要制定一个达到目标的最佳方案。
++
+
+We should develop the optimum plan to attain the goal.
+
+11. 这样的生活习惯可能会损害健康。
++
+
+Such living habits could jeopardize health.
+
+12. 18岁以上的人才有资格参加比赛。
++
+
+Only People over 18 can qualify for the competition.
+
+13. 这款产品吸引了超过一百万消费者。
++
+
+This product has drawn more than 1 million consumers.
+
+
