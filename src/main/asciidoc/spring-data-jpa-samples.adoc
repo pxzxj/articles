@@ -165,3 +165,67 @@ public class CucdFormulaService {
     }
 }
 ----
+
+== 预期外的持久化
+
+*问题描述*：有如下的 `OrderService` 以及对应的 `OrderController`，从 `OrderController` 调用 `orderService.feedback()` 方法时参数 `orderFeedbackRequest.getProcessTime()` 为 `null`，因此 `LocalDateTime.parse` 抛出 `NullPointerException` 进行 catch 块执行，很明显因为发生了异常导致 `orderSendRecordRepository.save(orderSendRecord);` 没有执行，但最终数据库中 `orderSendRecord` 的 `status` 和 `handler` 仍然被修改
+
+*问题原因*：项目保留了spring boot默认的 `spring.jpa.open-in-view=true` 的配置，因此 `EntityManager` 或者叫持久化上下文在整个请求期间都是打开的，因此 `orderSendRecord` 从未变成游离态，执行过 `setStatus` 和 `setHandler` 之后 `orderSendRecord` 就变脏，最终执行 `orderLogRepository.save(orderLog);` 时刷新持久化上下文也将变脏的 `orderSendRecord` 更新到数据库
+
+NOTE: `orderLogRepository.save(orderLog);` 会开启事务，事务提交时会调用 `entityManager.flush()`
+
+[source,java,subs="verbatim"]
+----
+@Service
+public class OrderService {
+
+	private final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
+	private final OrderSendRecordRepository orderSendRecordRepository;
+
+	private final OrderLogRepository orderLogRepository;
+
+	public OrderService( OrderSendRecordRepository orderSendRecordRepository, OrderLogRepository orderLogRepository) {
+		this.orderSendRecordRepository = orderSendRecordRepository;
+		this.orderLogRepository = orderLogRepository;
+	}
+
+
+	public OrderFeedbackResponse feedback(OrderFeedbackRequest orderFeedbackRequest) {
+		String workOrderNo = orderFeedbackRequest.getWorkOrderNo();
+		Optional<OrderSendRecord> orderSendRecordOptional = orderSendRecordRepository.findByBusinessId(workOrderNo);
+		if (!orderSendRecordOptional.isPresent()) {
+			return OrderFeedbackResponse.failResponse("工单不存在");
+		}
+		OrderSendRecord orderSendRecord = orderSendRecordOptional.get();
+		try {
+			if(OrderSendRecordStatus.TO_HANDLE.equals(orderSendRecord.getStatus())) {
+				orderSendRecord.setStatus(OrderSendRecordStatus.HANDLED);
+				orderSendRecord.setHandler(orderFeedbackRequest.getProcessor());
+				orderSendRecord.setHandleTime(LocalDateTime.parse(orderFeedbackRequest.getProcessTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+				orderSendRecord.setHandleRemark(orderFeedbackRequest.getProcessContent());
+				orderSendRecordRepository.save(orderSendRecord);
+				saveLog(orderSendRecord.getOrder().getId(), OrderLogType.HANDLE, orderFeedbackRequest.getProcessor(),true, "");
+				orderRepository.toComplete(orderSendRecord.getOrder().getId());
+			}
+			return OrderFeedbackResponse.successResponse();
+		} catch (Exception ex) {
+			logger.error("fail to feedback order, workOrderNo: " + workOrderNo, ex);
+			saveLog(orderSendRecord.getId(), OrderLogType.HANDLE, orderFeedbackRequest.getProcessor(),false, "");
+			return OrderFeedbackResponse.failResponse("回调失败");
+		}
+	}
+
+	private void saveLog(Long orderId, OrderLogType type, String operator, boolean success, String remark) {
+		OrderLog orderLog = new OrderLog();
+		orderLog.setOrderId(orderId);
+		orderLog.setType(type);
+		orderLog.setOperator(operator);
+		orderLog.setOperateTime(LocalDateTime.now());
+		orderLog.setResult(success ? "成功" : "失败");
+		orderLog.setRemark(remark);
+		orderLogRepository.save(orderLog);
+	}
+
+}
+----
