@@ -26,3 +26,4 @@ xref:src/main/asciidoc/spring-cloud-gateway-log.adoc[Spring Cloud Gateway记录�
 xref:src/main/asciidoc/truelicense.adoc[TrueLicense入门]  :: 2025/04/22
 xref:src/main/asciidoc/jasypt.adoc[Jasypt实现配置文件加密]  :: 2025/04/22
 xref:src/main/asciidoc/first-in-hospital.adoc[第一次住院]  :: 2026/07/29
+xref:src/main/asciidoc/groovy.adoc[使用Groovy开发jsr223脚本]  :: 2026/08/03

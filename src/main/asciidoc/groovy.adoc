@@ -1,0 +1,325 @@
+:toc:
+= 使用Groovy开发jsr223脚本
+pxzxj; pudge.zxj@gmail.com; 2026/08/03
+
+
+
+== 依赖
+
+[source,xml,subs="verbatim"]
+----
+<dependency>
+  <groupId>org.codehaus.groovy</groupId>
+  <artifactId>groovy-jsr223</artifactId>
+  <version>3.0.18</version>
+</dependency>
+----
+
+== 使用
+
+[source,java,subs="verbatim"]
+----
+class Test{
+
+    @Test
+    void test() throws ScriptException {
+        ScriptEngine scriptEngine = new ScriptEngineManager().getEngineByExtension("groovy");
+        scriptEngine.eval("println 'Hello World!'");
+    }
+}
+----
+
+== 优势
+
+相比于使用JavaScript编写脚本，Groovy的优势主要有如下几点
+
+* 更接近Java语言，基本上可以按照编写Java代码的方式编写脚本
+* 能够利用IDE提供的编译时检查、自动提示、自动补全等机制
+* 提供了大量好用的语法糖，这部分在下文介绍
+* 脚本运行速度更快
+
+正因为上面这些优势使用Groovy编写脚本能提升一倍以上的开发效率
+
+== 语法
+
+Groovy语法众多，本章仅选择在脚本中使用较多的部分进行说明
+
+=== 基础
+
+[source,groovy,subs="verbatim"]
+----
+String ss(){
+    "Hello World!"             // <1>
+}
+
+println ss()                   // <2>
+println new Date().time        // <3>
+println 'aa' == 'aa'           // <4>
+def date = new Date()
+println date?.time             // <5>
+assert date != null            // <6>
+def time = date.time ?: 123    // <7>
+def set = [] as Set<String>    // <8>
+----
+1. 方法的 `return` 关键字是可选的，没有时使用最后一行代码的结果作为返回值，行尾的分号也算可选的
+2. 调用方法的括号在不引起歧义的情况下是可选的，当闭包是方法最后一个参数时可以放在括号外
+3. 可以直接使用 `.` 访问Java Bean的属性，而不必使用 `getter/setter`
+4. groovy中的 `==` 相当于Java中的 `equals()`，Java中的 `==` 相当于groovy中的 `is()`
+5. `?.` 可以代替非空判定，例如 `println order?.customer?.address`，如果order或者customer为null最终结果为null
+6. 多使用assert
+7. `?:` 代替一部分三元运算符，`def result = name ?: "Unknown"` 与 `def result = name != null ? name : "Unknown"` 效果相同
+8. 除了使用括号形式的类型强转外也可以使用 `as` 关键字进行类型强转
+
+=== 字符串
+
+Groovy支持使用单引号和双引号创建字符串
+
+==== GString
+
+Groovy提供了更强大的字符串类型GString，例如 `throw new Exception("Unable to convert resource: $\{resource}")`，大括号内可以是任意的表达式，对于简单的变量甚至可以去掉大括号变成 `$resource`，但要注意GString与同值的Java String还是不相等的，GString的 `toString()` 方法可以返回Java的String，如果一个方法参数声明了String，调用时传递了GString则会自动调用GString的 `toString()`
+
+[source,groovy,subs="verbatim"]
+----
+def a = 'aaa'
+def list = ["b$a"]
+assert "b$a" == 'baaa'         // <1>
+assert list.contains('baaa')   // <2>
+----
+1. 断言通过
+2. 断言不通过
+
+TIP: GString可以用于作为制作脚本模板
+
+==== 多行字符串
+
+Groovy支持使用三个单引号或者三个双引号声明多行字符串，三个双引号可以使用GString
+
+[source,groovy,subs="verbatim"]
+----
+String ifipv4address(String table) {
+    """{
+            "command" : "LST IFIPV4ADDRESS:;",
+            "vtlTableName" : "$table",
+            "parseConfigurer" : {
+                "fields" : [{"matchName": "接口名", "name": "tnlname"},
+                            {"matchName": "IPv4地址", "name": "ipv4_address"},
+                            {"matchName": "IPv4地址掩码", "name": "ipv4_address_mask"},
+                            {"matchName": "IPv4地址类型", "name": "ipv4_address_type"}]
+            }
+
+        }"""
+}
+----
+
+=== 类型声明
+
+Groovy可以使用 `def` 关键字或者具体类型进行类型声明，也会基于赋值语句进行类型推断，在一些无法推断类型的情况下（例如赋值为 `null`)为了后面的代码能够自动提示可以使用具体类型，还有方法的参数和返回值建议使用具体类型便于编译时检查
+
+[source,groovy,subs="verbatim"]
+----
+def i = 1
+def m = map(i)
+
+Map<String, String> map(Integer i) {
+    [i.toString() : i.toString()]
+}
+----
+
+
+=== 集合处理
+
+Groovy为集合提供了众多语法糖，其易用性甚至超过直接使用Java代码，本节列举部分常用的，完整内容参考 https://groovy-lang.org/groovy-dev-kit.html#_working_with_collections[官方文档]
+
+==== List
+
+[source,groovy,subs="verbatim"]
+----
+def list = [5, 6, 7, 8]                //定义集合
+assert list.get(2) == 7
+assert list[2] == 7                    //以数组的方式访问集合元素
+list[2] = 9                            //以数组的方式为list元素赋值
+assert list == [5, 6, 9, 8]
+[1, 2, 3].each {
+    println "Item: $it" // it是遍历集合时元素的默认名称
+}
+['a', 'b', 'c'].eachWithIndex { it, i -> // `it` 是当前元素, `i` 是索引
+    println "$i: $it"
+}
+assert [1, 2, 3].collect { it * 2 } == [2, 4, 6]
+assert [1, 2, 3].find { it > 1 } == 2           // 查找第一个满足条件的元素
+assert [1, 2, 3].findAll { it > 1 } == [2, 3]   // 查找所有满足条件的元素
+assert [1, 2, 3].every { it < 5 }               // 所过所有元素满足条件就返回true
+assert [1, 2, 3].any { it > 2 }                 // 如果任意元素满足条件就返回true
+assert [1, 2, 3].join('-') == '1-2-3'           // 元素连接
+
+
+list = [9, 4, 2, 10, 5]
+assert list.max() == 10
+assert list.min() == 2
+assert list2.max { it.size() } == 'xyzuvw'
+assert list2.min { it.size() } == 'z'
+
+
+list = []
+
+list << 5                                        // 使用<<添加元素
+assert list.size() == 1
+
+list << 7 << 'i' << 11
+assert list == [5, 7, 'i', 11]
+
+def a = [1, 2, 3]
+a += 4                                          // 使用加号添加元素
+a += [5, 6]                                     // 使用加号两个集合相加
+assert a == [1, 2, 3, 4, 5, 6]
+
+assert [1,2,3,3,3,3,4,5].count {
+    it%2==0                                     // 满足条件的元素数量
+} == 2
+----
+
+==== Map
+
+[source,groovy,subs="verbatim"]
+----
+def map = [name: 'Gromit', likes: 'cheese', id: 1234]       // 定义Map，key不需要引号
+assert map.get('name') == 'Gromit'
+assert map.get('id') == 1234
+assert map['name'] == 'Gromit'                             // 以数组的形式访问Map元素
+assert map['id'] == 1234
+assert map.name == 'Gromit'                                // 以属性的形式访问Map元素
+assert map.id == 1234
+
+def a = 'Bob'
+def ages = [a: 43]
+assert ages['Bob'] == null                                 // 找不到key为 `Bob` 的元素
+assert ages['a'] == 43                                     // 能找到key为 `a` 的元素
+
+ages = [(a): 43]
+assert ages['Bob'] == 43                                   // 使用括号和变量名后能找到对应元素
+
+def emptyMap = [:]
+assert emptyMap.size() == 0
+emptyMap.foo = 5                                           //修改entry的value
+assert emptyMap.size() == 1
+assert emptyMap.foo == 5
+
+map = [
+        Bob  : 42,
+        Alice: 54,
+        Max  : 33
+]
+
+// 遍历Map
+map.each { entry ->
+    println "Name: $entry.key Age: $entry.value"
+}
+
+// Map是有序的，i是索引
+map.eachWithIndex { entry, i ->
+    println "$i - Name: $entry.key Age: $entry.value"
+}
+
+// 直接遍历key和value
+map.each { key, value ->
+    println "Name: $key Age: $value"
+}
+
+// 遍历key-value和索引
+map.eachWithIndex { key, value, i ->
+    println "$i - Name: $key Age: $value"
+}
+
+def people = [
+    1: [name:'Bob', age: 32, gender: 'M'],
+    2: [name:'Johnny', age: 36, gender: 'M'],
+    3: [name:'Claire', age: 21, gender: 'F'],
+    4: [name:'Amy', age: 54, gender:'F']
+]
+
+def bob = people.find { it.value.name == 'Bob' }         // 查找单个entry
+def females = people.findAll { it.value.gender == 'F' }
+
+def ageOfBob = bob.value.age
+
+//Map转List
+def agesOfFemales = females.collect {
+    it.value.age
+}
+
+assert ageOfBob == 32
+assert agesOfFemales == [21,54]
+
+def agesOfMales = people.findAll { id, person ->
+    person.gender == 'M'
+}.collect { id, person ->
+    person.age
+}
+assert agesOfMales == [32, 36]
+
+// 所有元素都满足条件时返回true
+assert people.every { id, person ->
+    person.age > 18
+}
+
+// 任一元素满足条件时返回true
+
+assert people.any { id, person ->
+    person.age == 54
+}
+----
+
+==== Range
+
+Range是List的子集，用于返回一个序列
+
+[source,groovy,subs="verbatim"]
+----
+def range = 5..8
+assert range.size() == 4
+assert range.get(2) == 7
+assert range[2] == 7
+----
+
+=== 全局变量
+
+[source,groovy,subs="verbatim"]
+----
+supercmdConnection = null             // <1>
+
+ConnectionBase connection() {
+    try {
+        supercmdConnection = SupercmdClient.createConnection(td.getDeviceId() + '', td.getUserId() + '', OperateType.CONFIG);
+        return new ConnectionBase();
+    } catch (err) {
+        throw err;
+    }
+}
+
+void releaseConnection() {
+    if(supercmdConnection != null) {
+        supercmdConnection.close();
+    }
+}
+----
+1. 函数之外不加类型声明的变量为全局变量，可以在函数间共用
+
+=== 动态函数调用
+
+[source,groovy,subs="verbatim"]
+----
+void pp() {
+    println 'Hello World!'
+}
+
+def str = "p"
+
+"p$str"()
+----
+
+== 最佳实践
+
+* 使用Java接口定义脚本
+
+
+
