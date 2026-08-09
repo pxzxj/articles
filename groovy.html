@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2026/08/03">
+<title>使用Groovy开发jsr223脚本</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>使用Groovy开发jsr223脚本</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2026/08/03</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_依赖">1. 依赖</a></li>
+<li><a href="#_使用">2. 使用</a></li>
+<li><a href="#_优势">3. 优势</a></li>
+<li><a href="#_语法">4. 语法</a>
+<ul class="sectlevel2">
+<li><a href="#_基础">4.1. 基础</a></li>
+<li><a href="#_字符串">4.2. 字符串</a>
+<ul class="sectlevel3">
+<li><a href="#_gstring">4.2.1. GString</a></li>
+<li><a href="#_多行字符串">4.2.2. 多行字符串</a></li>
+</ul>
+</li>
+<li><a href="#_类型声明">4.3. 类型声明</a></li>
+<li><a href="#_集合处理">4.4. 集合处理</a>
+<ul class="sectlevel3">
+<li><a href="#_list">4.4.1. List</a></li>
+<li><a href="#_map">4.4.2. Map</a></li>
+<li><a href="#_range">4.4.3. Range</a></li>
+</ul>
+</li>
+<li><a href="#_全局变量">4.5. 全局变量</a></li>
+<li><a href="#_动态函数调用">4.6. 动态函数调用</a></li>
+</ul>
+</li>
+<li><a href="#_最佳实践">5. 最佳实践</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_依赖"><a class="anchor" href="#_依赖"></a>1. 依赖</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.codehaus.groovy&lt;/groupId&gt;
+  &lt;artifactId&gt;groovy-jsr223&lt;/artifactId&gt;
+  &lt;version&gt;3.0.18&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_使用"><a class="anchor" href="#_使用"></a>2. 使用</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">class Test{
+
+    @Test
+    void test() throws ScriptException {
+        ScriptEngine scriptEngine = new ScriptEngineManager().getEngineByExtension("groovy");
+        scriptEngine.eval("println 'Hello World!'");
+    }
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_优势"><a class="anchor" href="#_优势"></a>3. 优势</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>相比于使用JavaScript编写脚本，Groovy的优势主要有如下几点</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>更接近Java语言，基本上可以按照编写Java代码的方式编写脚本</p>
+</li>
+<li>
+<p>能够利用IDE提供的编译时检查、自动提示、自动补全等机制</p>
+</li>
+<li>
+<p>提供了大量好用的语法糖，这部分在下文介绍</p>
+</li>
+<li>
+<p>脚本运行速度更快</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>正因为上面这些优势使用Groovy编写脚本能提升一倍以上的开发效率</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_语法"><a class="anchor" href="#_语法"></a>4. 语法</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Groovy语法众多，本章仅选择在脚本中使用较多的部分进行说明</p>
+</div>
+<div class="sect2">
+<h3 id="_基础"><a class="anchor" href="#_基础"></a>4.1. 基础</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">String ss(){
+    "Hello World!"             <i class="conum" data-value="1"></i><b>(1)</b>
+}
+
+println ss()                   <i class="conum" data-value="2"></i><b>(2)</b>
+println new Date().time        <i class="conum" data-value="3"></i><b>(3)</b>
+println 'aa' == 'aa'           <i class="conum" data-value="4"></i><b>(4)</b>
+def date = new Date()
+println date?.time             <i class="conum" data-value="5"></i><b>(5)</b>
+assert date != null            <i class="conum" data-value="6"></i><b>(6)</b>
+def time = date.time ?: 123    <i class="conum" data-value="7"></i><b>(7)</b>
+def set = [] as Set&lt;String&gt;    <i class="conum" data-value="8"></i><b>(8)</b>
+</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>方法的 <code>return</code> 关键字是可选的，没有时使用最后一行代码的结果作为返回值，行尾的分号也算可选的</p>
+</li>
+<li>
+<p>调用方法的括号在不引起歧义的情况下是可选的，当闭包是方法最后一个参数时可以放在括号外</p>
+</li>
+<li>
+<p>可以直接使用 <code>.</code> 访问Java Bean的属性，而不必使用 <code>getter/setter</code></p>
+</li>
+<li>
+<p>groovy中的 <code>==</code> 相当于Java中的 <code>equals()</code>，Java中的 <code>==</code> 相当于groovy中的 <code>is()</code></p>
+</li>
+<li>
+<p><code>?.</code> 可以代替非空判定，例如 <code>println order?.customer?.address</code>，如果order或者customer为null最终结果为null</p>
+</li>
+<li>
+<p>多使用assert</p>
+</li>
+<li>
+<p><code>?:</code> 代替一部分三元运算符，<code>def result = name ?: "Unknown"</code> 与 <code>def result = name != null ? name : "Unknown"</code> 效果相同</p>
+</li>
+<li>
+<p>除了使用括号形式的类型强转外也可以使用 <code>as</code> 关键字进行类型强转</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_字符串"><a class="anchor" href="#_字符串"></a>4.2. 字符串</h3>
+<div class="paragraph">
+<p>Groovy支持使用单引号和双引号创建字符串</p>
+</div>
+<div class="sect3">
+<h4 id="_gstring"><a class="anchor" href="#_gstring"></a>4.2.1. GString</h4>
+<div class="paragraph">
+<p>Groovy提供了更强大的字符串类型GString，例如 <code>throw new Exception("Unable to convert resource: ${resource}")</code>，大括号内可以是任意的表达式，对于简单的变量甚至可以去掉大括号变成 <code>$resource</code>，但要注意GString与同值的Java String还是不相等的，GString的 <code>toString()</code> 方法可以返回Java的String，如果一个方法参数声明了String，调用时传递了GString则会自动调用GString的 <code>toString()</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">def a = 'aaa'
+def list = ["b$a"]
+assert "b$a" == 'baaa'         <i class="conum" data-value="1"></i><b>(1)</b>
+assert list.contains('baaa')   <i class="conum" data-value="2"></i><b>(2)</b>
+</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>断言通过</p>
+</li>
+<li>
+<p>断言不通过</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+GString可以用于作为制作脚本模板
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_多行字符串"><a class="anchor" href="#_多行字符串"></a>4.2.2. 多行字符串</h4>
+<div class="paragraph">
+<p>Groovy支持使用三个单引号或者三个双引号声明多行字符串，三个双引号可以使用GString</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">String ifipv4address(String table) {
+    """{
+            "command" : "LST IFIPV4ADDRESS:;",
+            "vtlTableName" : "$table",
+            "parseConfigurer" : {
+                "fields" : [{"matchName": "接口名", "name": "tnlname"},
+                            {"matchName": "IPv4地址", "name": "ipv4_address"},
+                            {"matchName": "IPv4地址掩码", "name": "ipv4_address_mask"},
+                            {"matchName": "IPv4地址类型", "name": "ipv4_address_type"}]
+            }
+
+        }"""
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_类型声明"><a class="anchor" href="#_类型声明"></a>4.3. 类型声明</h3>
+<div class="paragraph">
+<p>Groovy可以使用 <code>def</code> 关键字或者具体类型进行类型声明，也会基于赋值语句进行类型推断，在一些无法推断类型的情况下（例如赋值为 <code>null</code>)为了后面的代码能够自动提示可以使用具体类型，还有方法的参数和返回值建议使用具体类型便于编译时检查</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">def i = 1
+def m = map(i)
+
+Map&lt;String, String&gt; map(Integer i) {
+    [i.toString() : i.toString()]
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_集合处理"><a class="anchor" href="#_集合处理"></a>4.4. 集合处理</h3>
+<div class="paragraph">
+<p>Groovy为集合提供了众多语法糖，其易用性甚至超过直接使用Java代码，本节列举部分常用的，完整内容参考 <a href="https://groovy-lang.org/groovy-dev-kit.html#_working_with_collections">官方文档</a></p>
+</div>
+<div class="sect3">
+<h4 id="_list"><a class="anchor" href="#_list"></a>4.4.1. List</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">def list = [5, 6, 7, 8]                //定义集合
+assert list.get(2) == 7
+assert list[2] == 7                    //以数组的方式访问集合元素
+list[2] = 9                            //以数组的方式为list元素赋值
+assert list == [5, 6, 9, 8]
+[1, 2, 3].each {
+    println "Item: $it" // it是遍历集合时元素的默认名称
+}
+['a', 'b', 'c'].eachWithIndex { it, i -&gt; // `it` 是当前元素, `i` 是索引
+    println "$i: $it"
+}
+assert [1, 2, 3].collect { it * 2 } == [2, 4, 6]
+assert [1, 2, 3].find { it &gt; 1 } == 2           // 查找第一个满足条件的元素
+assert [1, 2, 3].findAll { it &gt; 1 } == [2, 3]   // 查找所有满足条件的元素
+assert [1, 2, 3].every { it &lt; 5 }               // 所过所有元素满足条件就返回true
+assert [1, 2, 3].any { it &gt; 2 }                 // 如果任意元素满足条件就返回true
+assert [1, 2, 3].join('-') == '1-2-3'           // 元素连接
+
+
+list = [9, 4, 2, 10, 5]
+assert list.max() == 10
+assert list.min() == 2
+assert list2.max { it.size() } == 'xyzuvw'
+assert list2.min { it.size() } == 'z'
+
+
+list = []
+
+list &lt;&lt; 5                                        // 使用&lt;&lt;添加元素
+assert list.size() == 1
+
+list &lt;&lt; 7 &lt;&lt; 'i' &lt;&lt; 11
+assert list == [5, 7, 'i', 11]
+
+def a = [1, 2, 3]
+a += 4                                          // 使用加号添加元素
+a += [5, 6]                                     // 使用加号两个集合相加
+assert a == [1, 2, 3, 4, 5, 6]
+
+assert [1,2,3,3,3,3,4,5].count {
+    it%2==0                                     // 满足条件的元素数量
+} == 2
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_map"><a class="anchor" href="#_map"></a>4.4.2. Map</h4>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">def map = [name: 'Gromit', likes: 'cheese', id: 1234]       // 定义Map，key不需要引号
+assert map.get('name') == 'Gromit'
+assert map.get('id') == 1234
+assert map['name'] == 'Gromit'                             // 以数组的形式访问Map元素
+assert map['id'] == 1234
+assert map.name == 'Gromit'                                // 以属性的形式访问Map元素
+assert map.id == 1234
+
+def a = 'Bob'
+def ages = [a: 43]
+assert ages['Bob'] == null                                 // 找不到key为 `Bob` 的元素
+assert ages['a'] == 43                                     // 能找到key为 `a` 的元素
+
+ages = [(a): 43]
+assert ages['Bob'] == 43                                   // 使用括号和变量名后能找到对应元素
+
+def emptyMap = [:]
+assert emptyMap.size() == 0
+emptyMap.foo = 5                                           //修改entry的value
+assert emptyMap.size() == 1
+assert emptyMap.foo == 5
+
+map = [
+        Bob  : 42,
+        Alice: 54,
+        Max  : 33
+]
+
+// 遍历Map
+map.each { entry -&gt;
+    println "Name: $entry.key Age: $entry.value"
+}
+
+// Map是有序的，i是索引
+map.eachWithIndex { entry, i -&gt;
+    println "$i - Name: $entry.key Age: $entry.value"
+}
+
+// 直接遍历key和value
+map.each { key, value -&gt;
+    println "Name: $key Age: $value"
+}
+
+// 遍历key-value和索引
+map.eachWithIndex { key, value, i -&gt;
+    println "$i - Name: $key Age: $value"
+}
+
+def people = [
+    1: [name:'Bob', age: 32, gender: 'M'],
+    2: [name:'Johnny', age: 36, gender: 'M'],
+    3: [name:'Claire', age: 21, gender: 'F'],
+    4: [name:'Amy', age: 54, gender:'F']
+]
+
+def bob = people.find { it.value.name == 'Bob' }         // 查找单个entry
+def females = people.findAll { it.value.gender == 'F' }
+
+def ageOfBob = bob.value.age
+
+//Map转List
+def agesOfFemales = females.collect {
+    it.value.age
+}
+
+assert ageOfBob == 32
+assert agesOfFemales == [21,54]
+
+def agesOfMales = people.findAll { id, person -&gt;
+    person.gender == 'M'
+}.collect { id, person -&gt;
+    person.age
+}
+assert agesOfMales == [32, 36]
+
+// 所有元素都满足条件时返回true
+assert people.every { id, person -&gt;
+    person.age &gt; 18
+}
+
+// 任一元素满足条件时返回true
+
+assert people.any { id, person -&gt;
+    person.age == 54
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_range"><a class="anchor" href="#_range"></a>4.4.3. Range</h4>
+<div class="paragraph">
+<p>Range是List的子集，用于返回一个序列</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">def range = 5..8
+assert range.size() == 4
+assert range.get(2) == 7
+assert range[2] == 7
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_全局变量"><a class="anchor" href="#_全局变量"></a>4.5. 全局变量</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">supercmdConnection = null             <i class="conum" data-value="1"></i><b>(1)</b>
+
+ConnectionBase connection() {
+    try {
+        supercmdConnection = SupercmdClient.createConnection(td.getDeviceId() + '', td.getUserId() + '', OperateType.CONFIG);
+        return new ConnectionBase();
+    } catch (err) {
+        throw err;
+    }
+}
+
+void releaseConnection() {
+    if(supercmdConnection != null) {
+        supercmdConnection.close();
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>函数之外不加类型声明的变量为全局变量，可以在函数间共用</p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_动态函数调用"><a class="anchor" href="#_动态函数调用"></a>4.6. 动态函数调用</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-groovy" data-lang="groovy">void pp() {
+    println 'Hello World!'
+}
+
+def str = "p"
+
+"p$str"()
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_最佳实践"><a class="anchor" href="#_最佳实践"></a>5. 最佳实践</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>使用Java接口定义脚本</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-08-09 05:19:32 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

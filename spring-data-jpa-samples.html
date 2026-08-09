@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<meta name="author" content="pxzxj, pudge.zxj@gmail.com, 2024/08/05">
+<title>spring-data-jpa-samples</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>spring-data-jpa-samples</h1>
+<div class="details">
+<span id="author" class="author">pxzxj</span><br>
+<span id="author2" class="author">pudge.zxj@gmail.com</span><br>
+<span id="author3" class="author">2024/08/05</span><br>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_mappedsuperclass">1. @MappedSuperclass</a></li>
+<li><a href="#_onetomany">2. @OneToMany</a>
+<ul class="sectlevel2">
+<li><a href="#_级联删除">2.1. 级联删除</a></li>
+<li><a href="#_使用中间表关联">2.2. 使用中间表关联</a></li>
+</ul>
+</li>
+<li><a href="#_elementcollection">3. @ElementCollection</a></li>
+<li><a href="#_预期外的持久化">4. 预期外的持久化</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_mappedsuperclass"><a class="anchor" href="#_mappedsuperclass"></a>1. @MappedSuperclass</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@MappedSuperclass
+public abstract class CucdCriteriaBase {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    private String showName;
+
+    @Enumerated(EnumType.STRING)
+    private CompareCondition compareCondition;
+
+    private String compareValue;
+
+    //getter、setter
+
+}
+
+@Entity
+@Table(name = "cucd_criteria_inspection")
+public class CucdCriteriaInspection extends CucdCriteriaBase {
+
+    private String type;
+
+    //getter、setter
+}
+</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p><code>@MappedSuperclass</code> 声明的父类不会对应数据库中的表，只有子类会跟数据库中的表对应</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_onetomany"><a class="anchor" href="#_onetomany"></a>2. @OneToMany</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_级联删除"><a class="anchor" href="#_级联删除"></a>2.1. 级联删除</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Entity
+@Table(name = "cucd_criteria")
+public class CucdCriteria {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String deviceType;
+
+    private String company;
+
+    private String description;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "criteria_id")
+    private List&lt;CucdCriteriaBackup&gt; backups;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "criteria_id")
+    private List&lt;CucdCriteriaMetrics&gt; metrics;
+
+    //getter、setter
+}
+</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_使用中间表关联"><a class="anchor" href="#_使用中间表关联"></a>2.2. 使用中间表关联</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Entity
+@Table(name = "cucd_criteria_part")
+public class CucdCriteriaPart {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @OneToMany
+    @JoinTable(name = "cucd_criteria_part_backup", joinColumns = @JoinColumn(name = "part_id"), inverseJoinColumns = @JoinColumn(name = "backup_id"))
+    private List&lt;CucdCriteriaBackup&gt; backups;
+
+    @OneToMany
+    @JoinTable(name = "cucd_criteria_part_metrics", joinColumns = @JoinColumn(name = "part_id"), inverseJoinColumns = @JoinColumn(name = "metrics_id"))
+    private List&lt;CucdCriteriaMetrics&gt; metrics;
+
+    //getter、setter
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_elementcollection"><a class="anchor" href="#_elementcollection"></a>3. @ElementCollection</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>两个实体存在一对多关系且多的实体完全属于一的实体时使用，用DDD术语描述就是两个实体属于一个Aggregate并且一的实体是Aggregate Root</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Entity
+@Table(name = "cucd_formula")
+public class CucdFormula {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ElementCollection
+    @CollectionTable(name = "cucd_formula_device_name", joinColumns = @JoinColumn(name = "formula_id"))
+    @Column(name = "device_name")
+    private Set&lt;String&gt; deviceNames;
+
+    @ElementCollection
+    @CollectionTable(name = "cucd_formula_notify_type", joinColumns = @JoinColumn(name = "formula_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "notify_type")
+    private Set&lt;NotifyType&gt; notifyTypes;                        <i class="conum" data-value="1"></i><b>(1)</b>
+
+    @ElementCollection
+    @CollectionTable(name = "cucd_formula_notifier", joinColumns = @JoinColumn(name = "formula_id"))
+    private Set&lt;Notifier&gt; notifiers;                            <i class="conum" data-value="2"></i><b>(2)</b>
+
+    //getter、setter
+
+    @Embeddable
+    public static class Notifier {
+
+        private Integer userId;
+
+        private Integer orgId;
+
+        //getter、setter
+    }
+}
+</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>cucd_formula_notify_type</code> 表有两列 <code>formula_id</code> 和 <code>notify_type</code></p>
+</li>
+<li>
+<p><code>cucd_formula_notifier</code> 表有三列 <code>formula_id</code>、<code>user_id</code> 和 <code>org_id</code></p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>使用Criteria API根据 <code>@ElementCollection</code> 声明的属性进行模糊查询</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">public class CucdFormulaService {
+    public Page&lt;CucdFormula&gt; list(CucdFormula cucdFormula, Pageable pageable, String deviceName) {
+        Specification&lt;CucdFormula&gt; specification = (root, query, criteriaBuilder) -&gt; {
+            List&lt;Predicate&gt; predicates = new ArrayList&lt;&gt;();
+            if (StringUtils.hasText(cucdFormula.getName())) {
+                predicates.add(criteriaBuilder.like(root.get(CucdFormula_.NAME), "%" + cucdFormula.getName() + "%"));
+            }
+            if (StringUtils.hasText(deviceName)) {
+                Subquery&lt;Long&gt; subquery = criteriaBuilder.createQuery(CucdFormula.class).subquery(Long.class);
+                Root&lt;CucdFormula&gt; subRoot = subquery.from(CucdFormula.class);
+                subquery.select(criteriaBuilder.literal(1L))
+                        .where(criteriaBuilder.equal(root.get(CucdFormula_.ID), subRoot.get(CucdFormula_.ID)),
+                            criteriaBuilder.like(subRoot.join(CucdFormula_.DEVICE_NAMES), "%" + deviceName + "%"));
+                predicates.add(criteriaBuilder.exists(subquery));
+            }
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+        return cucdFormulaRepository.findAll(specification, pageable);
+    }
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_预期外的持久化"><a class="anchor" href="#_预期外的持久化"></a>4. 预期外的持久化</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>问题描述</strong>：有如下的 <code>OrderService</code> 以及对应的 <code>OrderController</code>，从 <code>OrderController</code> 调用 <code>orderService.feedback()</code> 方法时参数 <code>orderFeedbackRequest.getProcessTime()</code> 为 <code>null</code>，因此 <code>LocalDateTime.parse</code> 抛出 <code>NullPointerException</code> 进行 catch 块执行，很明显因为发生了异常导致 <code>orderSendRecordRepository.save(orderSendRecord);</code> 没有执行，但最终数据库中 <code>orderSendRecord</code> 的 <code>status</code> 和 <code>handler</code> 仍然被修改</p>
+</div>
+<div class="paragraph">
+<p><strong>问题原因</strong>：项目保留了spring boot默认的 <code>spring.jpa.open-in-view=true</code> 的配置，因此 <code>EntityManager</code> 或者叫持久化上下文在整个请求期间都是打开的，因此 <code>orderSendRecord</code> 从未变成游离态，执行过 <code>setStatus</code> 和 <code>setHandler</code> 之后 <code>orderSendRecord</code> 就变脏，最终执行 <code>orderLogRepository.save(orderLog);</code> 时刷新持久化上下文也将变脏的 <code>orderSendRecord</code> 更新到数据库</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<code>orderLogRepository.save(orderLog);</code> 会开启事务，事务提交时会调用 <code>entityManager.flush()</code>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-java" data-lang="java">@Service
+public class OrderService {
+
+	private final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
+	private final OrderSendRecordRepository orderSendRecordRepository;
+
+	private final OrderLogRepository orderLogRepository;
+
+	public OrderService( OrderSendRecordRepository orderSendRecordRepository, OrderLogRepository orderLogRepository) {
+		this.orderSendRecordRepository = orderSendRecordRepository;
+		this.orderLogRepository = orderLogRepository;
+	}
+
+
+	public OrderFeedbackResponse feedback(OrderFeedbackRequest orderFeedbackRequest) {
+		String workOrderNo = orderFeedbackRequest.getWorkOrderNo();
+		Optional&lt;OrderSendRecord&gt; orderSendRecordOptional = orderSendRecordRepository.findByBusinessId(workOrderNo);
+		if (!orderSendRecordOptional.isPresent()) {
+			return OrderFeedbackResponse.failResponse("工单不存在");
+		}
+		OrderSendRecord orderSendRecord = orderSendRecordOptional.get();
+		try {
+			if(OrderSendRecordStatus.TO_HANDLE.equals(orderSendRecord.getStatus())) {
+				orderSendRecord.setStatus(OrderSendRecordStatus.HANDLED);
+				orderSendRecord.setHandler(orderFeedbackRequest.getProcessor());
+				orderSendRecord.setHandleTime(LocalDateTime.parse(orderFeedbackRequest.getProcessTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+				orderSendRecord.setHandleRemark(orderFeedbackRequest.getProcessContent());
+				orderSendRecordRepository.save(orderSendRecord);
+				saveLog(orderSendRecord.getOrder().getId(), OrderLogType.HANDLE, orderFeedbackRequest.getProcessor(),true, "");
+				orderRepository.toComplete(orderSendRecord.getOrder().getId());
+			}
+			return OrderFeedbackResponse.successResponse();
+		} catch (Exception ex) {
+			logger.error("fail to feedback order, workOrderNo: " + workOrderNo, ex);
+			saveLog(orderSendRecord.getId(), OrderLogType.HANDLE, orderFeedbackRequest.getProcessor(),false, "");
+			return OrderFeedbackResponse.failResponse("回调失败");
+		}
+	}
+
+	private void saveLog(Long orderId, OrderLogType type, String operator, boolean success, String remark) {
+		OrderLog orderLog = new OrderLog();
+		orderLog.setOrderId(orderId);
+		orderLog.setType(type);
+		orderLog.setOperator(operator);
+		orderLog.setOperateTime(LocalDateTime.now());
+		orderLog.setResult(success ? "成功" : "失败");
+		orderLog.setRemark(remark);
+		orderLogRepository.save(orderLog);
+	}
+
+}
+</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-08-09 05:19:32 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>

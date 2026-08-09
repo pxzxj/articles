@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.15">
+<title>内容计费三七层数据核查详细设计</title>
+<link rel="stylesheet" href="css/site.css">
+<link href="css/custom.css" rel="stylesheet">
+<script src="js/setup.js"></script><script defer src="js/site.js"></script>
+
+</head>
+<body class="article toc2 toc-left"><div id="banner-container" class="container" role="banner">
+  <div id="banner" class="contained" role="banner">
+    <div id="switch-theme">
+      <input type="checkbox" id="switch-theme-checkbox" />
+      <label for="switch-theme-checkbox">Dark Theme</label>
+    </div>
+  </div>
+</div>
+<div id="tocbar-container" class="container" role="navigation">
+  <div id="tocbar" class="contained" role="navigation">
+    <button id="toggle-toc"></button>
+  </div>
+</div>
+<div id="main-container" class="container">
+  <div id="main" class="contained">
+    <div id="doc" class="doc">
+<div id="header">
+<h1>内容计费三七层数据核查详细设计</h1>
+<div id="toc" class="toc2">
+<div id="toctitle">Table of Contents</div>
+<span id="back-to-index"><a href="index.html">Back to index</a></span><ul class="sectlevel1">
+<li><a href="#_背景">1. 背景</a></li>
+<li><a href="#_数据模型">2. 数据模型</a></li>
+<li><a href="#_难点">3. 难点</a></li>
+<li><a href="#_核查方法">4. 核查方法</a>
+<ul class="sectlevel2">
+<li><a href="#_处理多做数据">4.1. 处理多做数据</a></li>
+<li><a href="#_处理漏做数据">4.2. 处理漏做数据</a></li>
+<li><a href="#_处理错做数据">4.3. 处理错做数据</a></li>
+</ul>
+</li>
+<li><a href="#_全量核查与增量核查">5. 全量核查与增量核查</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_背景"><a class="anchor" href="#_背景"></a>1. 背景</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>内容计费业务是一种基于内容价值的计费方式，用于针对不同业务、不同内容、不同带宽、不同体验等制定不同的计费策略或计费方式</p>
+</div>
+<div class="paragraph">
+<p>内容计费业务的工作原理是：运营商对上下行IP数据包进行包过滤和分析，在原始话单文件中标识出相关业务种类，然后将这些标识有内容类型的信息传送到运营商的内容计费平台中，平台利用这些信息完成解析、匹配、批价、账务、客服等一系列计费相关工作</p>
+</div>
+<div class="paragraph">
+<p>IP数据包的过滤是通过网元上的相关过滤器配置数据实现的，因此局数据系统需要核查这些配置数据的准确性，过滤器配置数据可以划分为三层数据、七层数据和三七层数据，本文介绍最复杂的三七层数据的核查逻辑</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_数据模型"><a class="anchor" href="#_数据模型"></a>2. 数据模型</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>不同厂商的配置数据模型大同小异，本文以中兴UPF网元为例进行说明，它包含下面几个数据模型</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/content_charge_models.png" alt="content charge models">
+</div>
+</div>
+<div class="paragraph">
+<p>如上图所示l34filter是对ip的过滤，l34filtergroup可以把多个l34filter划分到一组，l7filter是对域名的过滤，l7filtergroup可以把多个l7filter划分到一组，flowfilter把l34filtergroup和l7filtergroup关联起来实现ip和域名的同时过滤也就是ip和域名存在多对多关系</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+ip和域名的多对多关系不难理解，中大型系统都包含多个域名，例如百度就有 <code>tieba.baidu.com</code>、<code>zhidao.baidu.com</code>、<code>wenku.baidu.com</code> 等多个子域名，而这些子域名最终还是由同一组服务器集群提供服务的也就是ip相同
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_难点"><a class="anchor" href="#_难点"></a>3. 难点</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>ip域名的多对多关系给局数据核查制作带来很大困难，以增量核查为例，假设存在如下的现网数据和标准数据</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. 现网数据</caption>
+<colgroup>
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2857%;">
+<col style="width: 14.2858%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">l34filter_name</th>
+<th class="tableblock halign-left valign-top">l34filtergroup_name</th>
+<th class="tableblock halign-left valign-top">flowfilter_name</th>
+<th class="tableblock halign-left valign-top">l7filtergroup_name</th>
+<th class="tableblock halign-left valign-top">l7filter_name</th>
+<th class="tableblock halign-left valign-top">url</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.1.1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">l34f1</p></td>
+<td class="tableblock halign-center valign-middle" rowspan="2"><p class="tableblock">l34fg1</p></td>
+<td class="tableblock halign-center valign-middle" rowspan="2"><p class="tableblock">ff1</p></td>
+<td class="tableblock halign-center valign-middle" rowspan="2"><p class="tableblock">l7fg1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">l7f1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.3.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">l34f2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">l7f2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">qq.com</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. 标准数据</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ips</th>
+<th class="tableblock halign-left valign-top">urls</th>
+<th class="tableblock halign-left valign-top">operation_flag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.1.1.1,2.2.2.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com,douyin.com</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">新增</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.3.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">删除</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>可以看到标准数据删除的部分在现网中是存在的，但又无法直接删除，因为flowfilter建立起来的是多对多的关系，无法直接删掉其中的一条一对一关系，因此只能选择删除l34filtergroup中的一个l34filter或者删除l7filtergroup中的一个l7filter，再把多删的数据补回来</p>
+</div>
+<div class="paragraph">
+<p>新增的标准数据也是一样，它的一部分在现网中已经存在，因此同样需要把多个ip对应多个url做笛卡尔积得到多条ip与url的对应关系，只新增那些现网不存在的部分</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">url</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>1.1.1.1</mark></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>baidu.com(现网已经存在无需新增)</mark></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.1.1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">douyin.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.2.2.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.2.2.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">douyin.com</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+上一章l34filter除了ip之外还包含了port、protocol信息，但它的核心仍然是ip，l7filter类似也类似，模型中除了url之外还有protocol，本章以及下文为了便于说明仅使用它们关键的部分ip和url，实际开发时需要考虑其它字段
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_核查方法"><a class="anchor" href="#_核查方法"></a>4. 核查方法</h2>
+<div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="images/content-charge-check.png" alt="content charge check">
+</div>
+</div>
+<div class="paragraph">
+<p>l3filter和l7filter可以跟其它模型一样单独进行核查，只是要注意对标准数据中的ip和url进行去重处理，而l34filtergroup、flowfilter、l7filtergroup则需要按照上图所示的流程进行核查，下面对流程中的关键步骤做进一步说明</p>
+</div>
+<div class="sect2">
+<h3 id="_处理多做数据"><a class="anchor" href="#_处理多做数据"></a>4.1. 处理多做数据</h3>
+<div class="paragraph">
+<p>多做数据中的每一个flowfilter按照下面的方法得到删除和保留的ip、url</p>
+</div>
+<div class="paragraph">
+<p>假设现网一个flowfilter的数据如下所示，标黄的是多做的数据，此时有两种删除方案，一种是从l34filtergroup中删除 <code>1.1.1.1</code> 和 <code>2.2.2.2</code> 两个ip再添加这两个ip对应url为 <code>qq.com</code> 的数据，另一种删除方案是从l7filtergroup中删除 <code>baidu.com</code>，再添加 <code>baidu.com</code> 对应ip为 <code>3.3.3.3</code> 的数据，显然第二种方案删除的少添加的也少应该选择它</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+代码实现此选择算法时首先计算保留数据中每个ip对应的域名，把对应域名相同的ip归为一组，得到ip域名数量最多的组，再以类似的方法计算每个域名对应的ip，最终从两个最佳方案中选择ip域名数量多的一个即可
+</td>
+</tr>
+</table>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">domain</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>1.1.1.1</mark></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>baidu.com</mark></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.1.1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">qq.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>2.2.2.2</mark></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>baidu.com</mark></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.2.2.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">qq.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.3.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.3.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">qq.com</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>明确了删除方案后后ip和url都被分成了两部分</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">url</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>删除的ip</mark></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>删除的url</mark></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">留下的ip</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">留下的url</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>相交得到如下四部分</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>删除的ip <strong>X</strong> 删除的url</p>
+</li>
+<li>
+<p>留下的ip <strong>X</strong> 删除的url</p>
+</li>
+<li>
+<p>删除的ip <strong>X</strong> 留下的url</p>
+</li>
+<li>
+<p>留下的ip <strong>X</strong> 留下的url</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>前三部分可能包含了不该删除的数据需要被加回来，前三部分数据减去一开始需要删除的数据就得到 <code>连带删除的数据</code>，如果仍然使用上面的示例就得到如下结果</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">url</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>删除的ip为空</mark></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><mark>删除的url为baidu.com</mark></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">留下的ip为1.1.1.1,2.2.2.2,3.3.3.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">留下的url为qq.com</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>由于删除的ip为空就不需要考虑 <code>删除的ip <strong>X</strong> 删除的url</code> 和 <code>删除的ip <strong>X</strong> 留下的url</code> 这两种情况了，只需要考虑 <code>留下的ip <strong>X</strong> 删除的url</code> 这一种，那么就可以得到 <code>3.3.3.3-baidu.com</code> 就是连带删除的数据，需要后面补回来</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_处理漏做数据"><a class="anchor" href="#_处理漏做数据"></a>4.2. 处理漏做数据</h3>
+<div class="paragraph">
+<p>漏做数据包含了一开始使用ip和url作为主字段比对现网数据和标准数据得到的漏做数据以及处理多做时产生的的连带删除数据，漏做的数据需要新增， <span class="red">新增的原则是数据最少化，新增尽量少的l3filtergroup、l7filtergroup、flowfilter</span></p>
+</div>
+<div class="paragraph">
+<p>为了实现新增数据最少化，首先对漏做的标准数据进行合并，同一个ip对应的多个url合并为一组，对应的url组相同的ip也合并为一组，最终得到多个 <code>ip组-url组</code></p>
+</div>
+<div class="paragraph">
+<p>对新增数据分组后还需要考虑处理的顺序，假设存在如下的现网数据和需要新增的数据，如果按照顺序先新增 <code>2.2.2.2-baidu.com,qq.com</code> 那就需要新增一个l34filtergroup、一个l7filtergroup、一个flowfilter，但是如果是先处理 <code>1.1.1.1-qq.com</code> 那就只需要在现网已经存在的l7filtergroup上添加一条数据即可，并且紧接着处理下一条 <code>2.2.2.2-baidu.com,qq.com</code> 时再在已经存在的l34filtergroup上添加一条数据即可，无需新增任何的l34filtergroup、l7filtergroup、flowfilter</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 3. 现网数据</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">url</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.1.1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 4. 需要新增的数据</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">ip</th>
+<th class="tableblock halign-left valign-top">url</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.2.2.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">baidu.com,qq.com</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.1.1.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">qq.com</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_处理错做数据"><a class="anchor" href="#_处理错做数据"></a>4.3. 处理错做数据</h3>
+<div class="paragraph">
+<p>l34filter_name、l34filtergroup_name、l7filter_name、l7filtergrou_name、flowfilter_name都有命名规范，若命名不符合规范可以认为是错做，但由于核查是把ip和url做笛卡尔积后进行的，因此对于错做的处理非常复杂。所以直接把错做的数据看作一条多做和一条漏做即可，这样就可以使用上文介绍的多做的处理方法和漏做的处理方法</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_全量核查与增量核查"><a class="anchor" href="#_全量核查与增量核查"></a>5. 全量核查与增量核查</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>相比增量核查全量核查需要额外处理下面两部分数据：</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>正确数据保存在核查结果中</p>
+</li>
+<li>
+<p>未被任何flowfilter使用的l3filtergroup和l7filtergroup作为多做数据保存在核查结果中</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2026-08-09 05:19:32 UTC
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script src="https://utteranc.es/client.js"
+        repo="pxzxj/articles"
+        issue-term="title"
+        label="utteranc"
+        theme="github-light"
+        crossorigin="anonymous"
+        async>
+</script>
+</div>
+  </div>
+</div>
+</body>
+</html>
